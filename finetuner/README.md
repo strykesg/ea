@@ -33,10 +33,30 @@ A one-click script to fine-tune DeepSeek-Coder-V2-Lite-Instruct on your custom d
    ```
 
 2. **Set environment variables** (optional but recommended):
+
+   **Option A: Using .env file (recommended)**
+   ```bash
+   # Method 1: Create .env file manually
+   cat > .env << 'EOF'
+   HF_TOKEN=your_huggingface_token_here
+   WANDB_API_KEY=your_wandb_token_here
+   EOF
+
+   # Method 2: Use the helper script (interactive)
+   ./create_env.sh
+
+   # The scripts will automatically load this file
+   ```
+
+   **Option B: Using export commands**
    ```bash
    export HF_TOKEN=your_huggingface_token_here
    export WANDB_API_KEY=your_wandb_token_here  # For experiment tracking
    ```
+
+   **Get your tokens:**
+   - **HF Token**: https://huggingface.co/settings/tokens
+   - **WandB Token**: https://wandb.ai/authorize (optional, for experiment tracking)
 
 ## 📊 Data Format
 

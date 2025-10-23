@@ -10,6 +10,13 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file if it exists
+except ImportError:
+    pass  # python-dotenv not available, use system env vars
+
 # Unsloth imports for efficient fine-tuning
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template

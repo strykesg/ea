@@ -73,6 +73,20 @@ if command -v nvidia-smi &> /dev/null; then
     echo ""
 fi
 
+# Check for .env file
+if [ -f ".env" ]; then
+    echo "✅ Found .env file - environment variables will be loaded automatically"
+    echo ""
+else
+    echo "ℹ️  No .env file found. You can create one with:"
+    echo "   ./create_env.sh  (interactive)"
+    echo "   or manually: cat > .env << 'EOF'"
+    echo "   HF_TOKEN=your_token_here"
+    echo "   WANDB_API_KEY=your_wandb_token_here"
+    echo "   EOF"
+    echo ""
+fi
+
 # Install dependencies if needed
 echo "📦 Checking dependencies..."
 if ! python -c "import torch, transformers, unsloth" 2>/dev/null; then

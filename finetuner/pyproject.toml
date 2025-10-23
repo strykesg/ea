@@ -5,6 +5,7 @@ description = "Fine-tune DeepSeek-Coder-V2-Lite-Instruct with custom dataset and
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.1.0",
+    "python-dotenv>=1.0.0",
     "transformers>=4.36.0",
     "datasets>=2.15.0",
     "accelerate>=0.25.0",

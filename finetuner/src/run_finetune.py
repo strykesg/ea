@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import json
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file if it exists
+except ImportError:
+    pass  # python-dotenv not available, use system env vars
+
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
