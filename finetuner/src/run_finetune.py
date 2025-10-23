@@ -60,7 +60,9 @@ class FinetunePipeline:
         if not Path("data.jsonl").exists():
             logger.error("❌ data.jsonl not found!")
             logger.error("Please place your training data in data.jsonl")
-            logger.error("Format should match training_data.jsonl with 'instruction', 'input', 'output' fields")
+            logger.error("Format should match training_data.jsonl with either:")
+            logger.error("  - Instruction format: 'instruction', 'input', 'output' fields")
+            logger.error("  - Chat format: 'messages' array with 'role' and 'content' fields")
             return False
 
         # Check data file size and format
@@ -75,10 +77,25 @@ class FinetunePipeline:
                 first_line = lines[0].strip()
                 if first_line:
                     sample_data = json.loads(first_line)
-                    required_fields = {'instruction', 'input', 'output'}
-                    if not all(field in sample_data for field in required_fields):
-                        logger.error(f"❌ Invalid format in data.jsonl. Missing required fields: {required_fields - set(sample_data.keys())}")
-                        return False
+
+                    # Check for either instruction format or chat format
+                    if 'messages' in sample_data:
+                        # Chat format validation
+                        if not isinstance(sample_data['messages'], list):
+                            logger.error("❌ Invalid chat format: 'messages' should be a list")
+                            return False
+
+                        # Check that messages have required role/content structure
+                        for message in sample_data['messages']:
+                            if not all(key in message for key in ['role', 'content']):
+                                logger.error("❌ Invalid chat format: messages should have 'role' and 'content' fields")
+                                return False
+                    else:
+                        # Original instruction format validation
+                        required_fields = {'instruction', 'input', 'output'}
+                        if not all(field in sample_data for field in required_fields):
+                            logger.error(f"❌ Invalid format in data.jsonl. Missing required fields: {required_fields - set(sample_data.keys())}")
+                            return False
 
             logger.info(f"✅ Found data.jsonl with {len(lines)} examples")
         except (json.JSONDecodeError, KeyError) as e:

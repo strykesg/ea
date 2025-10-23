@@ -60,17 +60,34 @@ A one-click script to fine-tune DeepSeek-Coder-V2-Lite-Instruct on your custom d
 
 ## 📊 Data Format
 
-Your training data should be in `data.jsonl` format with the following structure:
+Your training data should be in `data.jsonl` format. The fine-tuner supports two formats:
 
+### Format 1: Instruction Format
 ```json
 {"instruction": "Explain quantum computing", "input": "What is a qubit?", "output": "A qubit is a quantum bit..."}
 {"instruction": "Write code", "input": "Create a Python function", "output": "def example_function():..."}
 ```
 
+### Format 2: Chat Format (OpenAI-style)
+```json
+{"messages": [
+    {"role": "system", "content": "You are an expert assistant..."},
+    {"role": "user", "content": "Explain quantum computing"},
+    {"role": "assistant", "content": "A qubit is a quantum bit..."}
+]}
+```
+
 ### Required Fields
+
+**For Instruction Format:**
 - `instruction`: The task description or prompt
 - `input`: Additional context (can be empty string)
 - `output`: The expected response
+
+**For Chat Format:**
+- `messages`: Array of message objects
+- Each message must have `role` and `content` fields
+- Supported roles: `system`, `user`, `assistant`
 
 ### Data Format Example
 ```jsonl

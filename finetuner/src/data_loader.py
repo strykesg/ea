@@ -1,6 +1,8 @@
 """
 Data loading utilities for fine-tuning with JSONL datasets.
-Handles the format similar to training_data.jsonl with instruction, input, output fields.
+Handles multiple formats:
+- Instruction format: instruction, input, output fields
+- Chat format: messages array with role/content structure
 """
 
 import json
@@ -58,6 +60,8 @@ class JSONLDatasetLoader:
         Format the data for training by combining instruction and input as prompt,
         and using output as the completion.
 
+        Supports both instruction format and chat format.
+
         Args:
             data: Raw data from JSONL file
 
@@ -67,10 +71,30 @@ class JSONLDatasetLoader:
         formatted_data = []
 
         for example in data:
-            # Handle the format from training_data.jsonl
-            instruction = example.get('instruction', '')
-            input_text = example.get('input', '')
-            output_text = example.get('output', '')
+            # Check if this is chat format (with messages array)
+            if 'messages' in example and isinstance(example['messages'], list):
+                # Handle chat format
+                messages = example['messages']
+                instruction = ''
+                input_text = ''
+                output_text = ''
+
+                for message in messages:
+                    role = message.get('role', '')
+                    content = message.get('content', '')
+
+                    if role == 'system':
+                        instruction = content
+                    elif role == 'user':
+                        input_text = content
+                    elif role == 'assistant':
+                        output_text = content
+
+            else:
+                # Handle original instruction format
+                instruction = example.get('instruction', '')
+                input_text = example.get('input', '')
+                output_text = example.get('output', '')
 
             # Combine instruction and input as the prompt
             if input_text:
@@ -78,14 +102,16 @@ class JSONLDatasetLoader:
             else:
                 prompt = instruction
 
-            formatted_example = {
-                'prompt': prompt,
-                'completion': output_text,
-                'id': example.get('id', ''),
-                'generated_at': example.get('generated_at', '')
-            }
+            # Only include examples that have output
+            if output_text:
+                formatted_example = {
+                    'prompt': prompt,
+                    'completion': output_text,
+                    'id': example.get('id', ''),
+                    'generated_at': example.get('generated_at', '')
+                }
 
-            formatted_data.append(formatted_example)
+                formatted_data.append(formatted_example)
 
         logger.info(f"Formatted {len(formatted_data)} examples for training")
         return formatted_data
