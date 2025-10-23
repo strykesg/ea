@@ -1,0 +1,41 @@
+# Model outputs and checkpoints
+outputs/
+*.gguf
+*.bin
+*.safetensors
+
+# Training logs and caches
+*.log
+wandb/
+.cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment and virtual environments
+venv/
+env/
+.venv/
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+data.jsonl.bak
+
+# Large model files (optional - uncomment if you want to ignore downloaded models)
+# ~/.cache/huggingface/
+# models/
+
