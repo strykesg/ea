@@ -1,5 +1,5 @@
 """
-Fine-tuning script for DeepSeek-Coder-V2-Lite-Instruct model.
+Fine-tuning script for DeepSeek-V2-Lite model.
 Optimized for long-form, complex reasoning with high sequence lengths and sample packing.
 """
 
@@ -36,7 +36,7 @@ class FinetuneConfig:
     """Configuration for fine-tuning."""
 
     # Model configuration
-    model_name: str = "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct"
+    model_name: str = "deepseek-ai/DeepSeek-V2-Lite"
     max_seq_length: int = 16384  # High sequence length for long-form reasoning
     dtype: str = "bfloat16"  # Use bfloat16 for efficiency
     load_in_4bit: bool = True  # 4-bit quantization for memory efficiency
@@ -79,7 +79,7 @@ class FinetuneConfig:
 
 
 class DeepSeekFinetuner:
-    """Fine-tuner for DeepSeek-Coder-V2-Lite-Instruct model."""
+    """Fine-tuner for DeepSeek-V2-Lite model."""
 
     def __init__(self, config: FinetuneConfig):
         """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-One-click script to fine-tune DeepSeek-Coder-V2-Lite-Instruct and quantize to GGUF.
+One-click script to fine-tune DeepSeek-V2-Lite and quantize to GGUF.
 This script handles the entire pipeline from data loading to final quantized model.
 """
 
@@ -267,7 +267,7 @@ class FinetunePipeline:
         logger.info("   3. Adjust training parameters if needed")
         logger.info("")
         logger.info("🔧 Model configuration:")
-        logger.info("   - Base model: DeepSeek-Coder-V2-Lite-Instruct")
+        logger.info("   - Base model: DeepSeek-V2-Lite")
         logger.info("   - Sequence length: 16384 tokens")
         logger.info("   - Sample packing: Enabled")
         logger.info("   - Quantization: Q4_K_M")
@@ -277,7 +277,7 @@ class FinetunePipeline:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Fine-tune DeepSeek-Coder-V2-Lite-Instruct and quantize to GGUF",
+        description="Fine-tune DeepSeek-V2-Lite and quantize to GGUF",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
