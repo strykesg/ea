@@ -13,7 +13,7 @@ echo ""
 
 # Create .env file
 cat > .env << ENV_EOF
-# Environment Variables for DeepSeek-Coder-V2-Lite-Instruct Fine-Tuner
+# Environment Variables for DeepSeek-V2-Lite Fine-Tuner
 HF_TOKEN=$hf_token
 WANDB_API_KEY=$wandb_token
 ENV_EOF

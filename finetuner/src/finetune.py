@@ -41,6 +41,9 @@ class FinetuneConfig:
     dtype: str = "bfloat16"  # Use bfloat16 for efficiency
     load_in_4bit: bool = True  # 4-bit quantization for memory efficiency
 
+    # RoPE scaling configuration for long contexts
+    rope_scaling: dict = None  # Will be set for DeepSeek models
+
     # LoRA configuration
     lora_r: int = 64  # LoRA rank
     lora_alpha: int = 128  # LoRA alpha
@@ -69,13 +72,22 @@ class FinetuneConfig:
     save_total_limit: int = 1
 
     def __post_init__(self):
-        """Set default LoRA target modules if not provided."""
+        """Set default configurations for DeepSeek models."""
         if self.lora_target_modules is None:
-            # Common target modules for DeepSeek models
+            # Common target modules for DeepSeek V2-Lite models
             self.lora_target_modules = [
                 "q_proj", "k_proj", "v_proj", "o_proj",
                 "gate_proj", "up_proj", "down_proj"
             ]
+
+        # Set RoPE scaling for DeepSeek-V2-Lite long context support
+        if self.rope_scaling is None and "deepseek" in self.model_name.lower():
+            self.rope_scaling = {
+                "type": "dynamic",
+                "factor": 40.0,
+                "beta_fast": 32.0,
+                "beta_slow": 1.0
+            }
 
 
 class DeepSeekFinetuner:
@@ -99,14 +111,23 @@ class DeepSeekFinetuner:
         logger.info(f"Max sequence length: {self.config.max_seq_length}")
         logger.info(f"Sample packing: {self.config.sample_packing}")
 
+        if self.config.rope_scaling is not None:
+            logger.info(f"RoPE scaling: {self.config.rope_scaling}")
+
         # Load model with Unsloth for memory efficiency
-        self.model, self.tokenizer = FastLanguageModel.from_pretrained(
-            model_name=self.config.model_name,
-            max_seq_length=self.config.max_seq_length,
-            dtype=getattr(torch, self.config.dtype),
-            load_in_4bit=self.config.load_in_4bit,
-            token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
-        )
+        load_kwargs = {
+            "model_name": self.config.model_name,
+            "max_seq_length": self.config.max_seq_length,
+            "dtype": getattr(torch, self.config.dtype),
+            "load_in_4bit": self.config.load_in_4bit,
+            "token": os.getenv("HF_TOKEN"),  # HuggingFace token if needed
+        }
+
+        # Add RoPE scaling for DeepSeek models
+        if self.config.rope_scaling is not None:
+            load_kwargs["rope_scaling"] = self.config.rope_scaling
+
+        self.model, self.tokenizer = FastLanguageModel.from_pretrained(**load_kwargs)
 
         # Apply LoRA adapters
         self.model = FastLanguageModel.get_peft_model(

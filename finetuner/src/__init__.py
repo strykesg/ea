@@ -1,5 +1,5 @@
 """
-DeepSeek-Coder-V2-Lite-Instruct Fine-Tuner Package
+DeepSeek-V2-Lite Fine-Tuner Package
 
 A comprehensive solution for fine-tuning and quantizing large language models
 with a focus on long-form, complex reasoning capabilities.

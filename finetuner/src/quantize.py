@@ -1,6 +1,6 @@
 """
 Quantization script to convert fine-tuned models to GGUF format with Q4_K_M quantization.
-Optimized for long-context models like DeepSeek-Coder-V2-Lite-Instruct.
+Optimized for long-context models like DeepSeek-V2-Lite.
 """
 
 import os

@@ -1,7 +1,7 @@
 [project]
 name = "finetuner"
 version = "0.1.0"
-description = "Fine-tune DeepSeek-Coder-V2-Lite-Instruct with custom dataset and quantize to GGUF"
+description = "Fine-tune DeepSeek-V2-Lite with custom dataset and quantize to GGUF"
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.1.0",

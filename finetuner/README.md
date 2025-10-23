@@ -1,6 +1,6 @@
-# DeepSeek-Coder-V2-Lite-Instruct Fine-Tuner
+# DeepSeek-V2-Lite Fine-Tuner
 
-A one-click script to fine-tune DeepSeek-Coder-V2-Lite-Instruct on your custom dataset and quantize it to GGUF format for efficient inference.
+A one-click script to fine-tune DeepSeek-V2-Lite on your custom dataset and quantize it to GGUF format for efficient inference.
 
 ## 🚀 Quick Start
 
@@ -99,7 +99,7 @@ Your training data should be in `data.jsonl` format. The fine-tuner supports two
 The fine-tuner is pre-configured for optimal performance:
 
 ### Model Configuration
-- **Base Model**: `deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct`
+- **Base Model**: `deepseek-ai/DeepSeek-V2-Lite` (2.8B parameters)
 - **Sequence Length**: 16,384 tokens (supports long-form reasoning)
 - **Sample Packing**: Enabled (improves training efficiency)
 - **Quantization**: Q4_K_M (balanced size/quality)
@@ -242,6 +242,8 @@ The fine-tuner uses:
 - **Sample Packing**: Efficient batching of variable-length sequences
 - **4-bit Quantization**: During training for memory efficiency
 - **Q4_K_M**: Final quantization for deployment
+
+**DeepSeek-V2-Lite** is a 2.8B parameter model optimized for general language tasks with excellent long-context capabilities.
 
 ## 📝 License
 

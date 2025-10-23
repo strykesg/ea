@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Fine-tune DeepSeek-Coder-V2-Lite-Instruct with one command
+# Fine-tune DeepSeek-V2-Lite with one command
 # Usage: ./finetune.sh [options]
 
 set -e  # Exit on any error
 
-echo "🚀 DeepSeek-Coder-V2-Lite-Instruct Fine-Tuner"
+echo "🚀 DeepSeek-V2-Lite Fine-Tuner"
 echo "=============================================="
 
 # Check if data.jsonl exists
