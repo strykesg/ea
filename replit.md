@@ -1,7 +1,7 @@
 # AI Training Data Generator
 
 ## Overview
-High-concurrency data generation pipeline for creating AI training datasets in JSONL format compatible with Axolotl. The system uses a two-step LLM process via OpenRouter API: fast generation (Mistral 7B) followed by powerful refinement (GPT-4).
+High-concurrency data generation pipeline for creating AI training datasets in JSONL format compatible with Axolotl. The system uses a two-step LLM process via OpenRouter API: fast generation (Mistral Nemo) followed by powerful refinement (DeepSeek R1).
 
 ## Architecture
 - **FastAPI** backend with async workers
@@ -28,13 +28,19 @@ High-concurrency data generation pipeline for creating AI training datasets in J
 └── static/                   # Static assets
 
 ## Configuration
-Set these environment variables in Replit Secrets:
-- `OPENROUTER_API_KEY`: Your OpenRouter API key
-- `SESSION_SECRET`: Secret key for sessions (auto-generated)
 
-Configurable settings in `config.py`:
-- `GENERATION_MODEL`: Fast LLM for initial generation (default: mistralai/mistral-7b-instruct)
-- `REFINEMENT_MODEL`: Powerful LLM for refinement (default: openai/gpt-4)
+### Environment Variables (Replit Secrets)
+Set these environment variables to configure the pipeline:
+
+**Required:**
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (required for LLM calls)
+
+**Optional:**
+- `GENERATOR_MODEL`: Fast LLM for initial generation (default: mistralai/mistral-nemo)
+- `REFINER_MODEL`: Powerful LLM for refinement (default: deepseek/deepseek-r1-0528-qwen3-8b)
+- `SESSION_SECRET`: Secret key for sessions (default: auto-generated)
+
+### Other Configurable Settings (config.py)
 - `MAX_WORKERS`: Number of concurrent workers (default: 10)
 - `MAX_CONCURRENT_REQUESTS`: API request concurrency limit (default: 20)
 - `TARGET_RECORDS`: Default number of records to generate (default: 5000)
@@ -68,3 +74,5 @@ Configurable settings in `config.py`:
 - 2025-10-23: Implemented in-memory state manager (removed Redis dependency)
 - 2025-10-23: Created real-time web dashboard with SSE
 - 2025-10-23: Added two-step LLM pipeline with concurrency control
+- 2025-10-23: Made LLM models configurable via environment variables (GENERATOR_MODEL, REFINER_MODEL)
+- 2025-10-23: Updated defaults to mistralai/mistral-nemo and deepseek/deepseek-r1-0528-qwen3-8b

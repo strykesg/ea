@@ -9,8 +9,8 @@ class Config:
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     
-    GENERATION_MODEL: str = "mistralai/mistral-7b-instruct"
-    REFINEMENT_MODEL: str = "openai/gpt-4"
+    GENERATION_MODEL: str = os.getenv("GENERATOR_MODEL", "mistralai/mistral-nemo")
+    REFINEMENT_MODEL: str = os.getenv("REFINER_MODEL", "deepseek/deepseek-r1-0528-qwen3-8b")
     
     MAX_WORKERS: int = 10
     MAX_CONCURRENT_REQUESTS: int = 20
