@@ -246,11 +246,12 @@ The fine-tuner uses:
 
 **DeepSeek-V2-Lite** is a 2.8B parameter model optimized for general language tasks with excellent long-context capabilities.
 
-The fine-tuner automatically configures **RoPE (Rotary Position Embedding) scaling** for DeepSeek models to handle the extended sequence lengths. This includes:
+The fine-tuner automatically configures **RoPE (Rotary Position Embedding) scaling** for DeepSeek models to handle the extended sequence lengths. The system:
 
-- **Dynamic scaling** with optimized parameters for long-context understanding
-- **Automatic type conversion** to ensure compatibility with Unsloth
-- **Model config patching** to fix any integer/float mismatches in the original model configuration
+- **Tries multiple approaches** to set the correct rope_scaling parameters
+- **Automatically fixes type issues** (integer to float conversion)
+- **Provides fallback mechanisms** if the primary method fails
+- **Logs all configuration steps** for debugging
 
 This enables efficient processing of long-form content while maintaining positional understanding.
 
