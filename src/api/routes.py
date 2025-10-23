@@ -11,7 +11,11 @@ async def event_stream(pipeline):
     while True:
         try:
             status = await pipeline.get_status()
-            data = json.dumps(status)
+            activity = await pipeline.state_manager.get_recent_activity(20)
+            data = json.dumps({
+                **status,
+                "activity": activity
+            })
             yield f"data: {data}\n\n"
             await asyncio.sleep(1)
         except Exception as e:
@@ -58,3 +62,9 @@ async def stream_status(request: Request):
             "X-Accel-Buffering": "no"
         }
     )
+
+@router.get("/api/activity")
+async def get_activity(request: Request):
+    pipeline = request.app.state.pipeline
+    activity = await pipeline.state_manager.get_recent_activity(50)
+    return JSONResponse({"activity": activity})

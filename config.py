@@ -12,8 +12,8 @@ class Config:
     GENERATION_MODEL: str = os.getenv("GENERATOR_MODEL", "mistralai/mistral-nemo")
     REFINEMENT_MODEL: str = os.getenv("REFINER_MODEL", "deepseek/deepseek-r1-0528-qwen3-8b")
     
-    MAX_WORKERS: int = 10
-    MAX_CONCURRENT_REQUESTS: int = 20
+    MAX_WORKERS: int = int(os.getenv("MAX_WORKERS", "10"))
+    MAX_CONCURRENT_REQUESTS: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "20"))
     RETRY_ATTEMPTS: int = 3
     RETRY_DELAY: float = 1.0
     

@@ -8,6 +8,7 @@ class StateManager:
         self.state: Dict[str, Any] = {}
         self.queue: deque = deque()
         self.completed: Dict[int, Dict[str, Any]] = {}
+        self.activity_log: deque = deque(maxlen=100)
         self.lock = asyncio.Lock()
     
     async def connect(self):
@@ -28,6 +29,7 @@ class StateManager:
             }
             self.queue.clear()
             self.completed.clear()
+            self.activity_log.clear()
     
     async def get_state(self) -> Dict[str, Any]:
         async with self.lock:
@@ -58,3 +60,11 @@ class StateManager:
     async def get_completed_count(self) -> int:
         async with self.lock:
             return len(self.completed)
+    
+    async def add_activity(self, activity: Dict[str, Any]):
+        async with self.lock:
+            self.activity_log.append(activity)
+    
+    async def get_recent_activity(self, limit: int = 20) -> list:
+        async with self.lock:
+            return list(self.activity_log)[-limit:]

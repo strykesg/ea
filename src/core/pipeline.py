@@ -26,8 +26,31 @@ class DataPipeline:
         async with self.semaphore:
             try:
                 assert self.llm_client is not None
+                
+                await self.state_manager.add_activity({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "type": "generating",
+                    "record_id": record_id,
+                    "message": f"Generating record #{record_id}..."
+                })
+                
                 generated = await self.llm_client.generate_record(record_id)
                 await self.state_manager.increment("generated")
+                
+                await self.state_manager.add_activity({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "type": "generated",
+                    "record_id": record_id,
+                    "instruction": generated.get("instruction", "")[:100],
+                    "message": f"Generated #{record_id}: {generated.get('instruction', '')[:80]}..."
+                })
+                
+                await self.state_manager.add_activity({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "type": "refining",
+                    "record_id": record_id,
+                    "message": f"Refining record #{record_id}..."
+                })
                 
                 refined = await self.llm_client.refine_record(generated)
                 await self.state_manager.increment("refined")
@@ -43,9 +66,23 @@ class DataPipeline:
                 await self.state_manager.mark_completed(record_id, record)
                 await self.state_manager.increment("completed")
                 
+                await self.state_manager.add_activity({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "type": "completed",
+                    "record_id": record_id,
+                    "instruction": record.get("instruction", "")[:100],
+                    "message": f"Completed #{record_id}: {record.get('instruction', '')[:80]}..."
+                })
+                
                 return record
             except Exception as e:
                 await self.state_manager.increment("failed")
+                await self.state_manager.add_activity({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "type": "error",
+                    "record_id": record_id,
+                    "message": f"Failed #{record_id}: {str(e)}"
+                })
                 print(f"Error processing record {record_id}: {e}")
                 return None
     

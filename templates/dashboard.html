@@ -184,6 +184,67 @@
             font-weight: bold;
             font-size: 1.1rem;
         }
+        
+        .activity-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .activity-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .activity-generating { border-left-color: #ff9800; }
+        .activity-generated { border-left-color: #2196f3; }
+        .activity-refining { border-left-color: #9c27b0; }
+        .activity-completed { border-left-color: #4caf50; }
+        .activity-error { border-left-color: #f44336; }
+        
+        .activity-message {
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .activity-time {
+            color: #999;
+            font-size: 0.75rem;
+        }
+        
+        .activity-instruction {
+            color: #666;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -237,6 +298,13 @@
             <p style="color: #666;">
                 <span id="progress-info">0 of 0 records completed</span>
             </p>
+        </div>
+        
+        <div class="activity-section">
+            <h2 style="margin-bottom: 20px;">🔄 Live Generation Feed</h2>
+            <div class="activity-feed" id="activity-feed">
+                <p style="color: #999; text-align: center; padding: 20px;">Waiting for activity...</p>
+            </div>
         </div>
         
         <div class="controls">
@@ -312,6 +380,52 @@
                 startTime = null;
                 lastCompleted = 0;
             }
+            
+            if (data.activity && data.activity.length > 0) {
+                updateActivityFeed(data.activity);
+            }
+        }
+        
+        function updateActivityFeed(activities) {
+            const feed = document.getElementById('activity-feed');
+            
+            if (activities.length === 0) {
+                feed.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Waiting for activity...</p>';
+                return;
+            }
+            
+            feed.innerHTML = '';
+            
+            activities.slice().reverse().forEach(activity => {
+                const item = document.createElement('div');
+                item.className = `activity-item activity-${activity.type}`;
+                
+                const message = document.createElement('div');
+                message.className = 'activity-message';
+                message.textContent = activity.message;
+                item.appendChild(message);
+                
+                if (activity.instruction) {
+                    const instruction = document.createElement('div');
+                    instruction.className = 'activity-instruction';
+                    instruction.textContent = `"${activity.instruction}"`;
+                    item.appendChild(instruction);
+                }
+                
+                const time = document.createElement('div');
+                time.className = 'activity-time';
+                time.textContent = formatTime(activity.timestamp);
+                item.appendChild(time);
+                
+                feed.appendChild(item);
+            });
+            
+            feed.scrollTop = 0;
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
         }
         
         async function startGeneration() {
