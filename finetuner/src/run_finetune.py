@@ -90,7 +90,7 @@ class FinetunePipeline:
             import torch
             if torch.cuda.is_available():
                 logger.info(f"✅ CUDA available: {torch.cuda.get_device_name(0)}")
-                logger.info(f"✅ GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9".2f"} GB")
+                logger.info(f"✅ GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
             else:
                 logger.warning("⚠️  CUDA not available. Training will be slow on CPU.")
                 logger.warning("   Consider using a GPU for better performance.")
@@ -197,7 +197,7 @@ class FinetunePipeline:
             logger.info("✅ Quantization complete!")
             logger.info(f"   GGUF model: {output_path}")
             logger.info(f"   Quantization: Q4_K_M")
-            logger.info(f"   File size: {Path(output_path).stat().st_size / 1e9".2f"} GB")
+            logger.info(f"   File size: {Path(output_path).stat().st_size / 1e9:.2f} GB")
 
             return True
 
@@ -241,7 +241,7 @@ class FinetunePipeline:
                 size = Path(path).stat().st_size / 1e9 if Path(path).is_file() else "N/A"
                 logger.info(f"✅ {step.upper()}: {path}")
                 if size != "N/A":
-                    logger.info(f"   Size: {size".2f"} GB")
+                    logger.info(f"   Size: {size:.2f} GB")
 
         logger.info("")
         logger.info("📝 Next steps:")

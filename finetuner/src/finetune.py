@@ -124,7 +124,7 @@ class DeepSeekFinetuner:
 
         logger.info("Model and tokenizer loaded successfully")
         logger.info(f"Trainable parameters: {self.model.num_parameters()}")
-        logger.info(f"Memory footprint: {self.model.get_memory_footprint() / 1e9".2f"} GB")
+        logger.info(f"Memory footprint: {self.model.get_memory_footprint() / 1e9:.2f} GB")
 
     def prepare_data(self):
         """Prepare the dataset for training."""
