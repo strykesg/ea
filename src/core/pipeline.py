@@ -13,6 +13,7 @@ class DataPipeline:
         self.semaphore = asyncio.Semaphore(config.MAX_CONCURRENT_REQUESTS)
         self.output_file = config.OUTPUT_FILE
         self.is_running = False
+        self.was_stopped = False
     
     async def initialize(self):
         await self.state_manager.connect()
@@ -74,6 +75,7 @@ class DataPipeline:
             num_records = config.TARGET_RECORDS
         
         self.is_running = True
+        self.was_stopped = False
         
         with open(self.output_file, "w") as f:
             f.write("")
@@ -106,12 +108,18 @@ class DataPipeline:
             
             await asyncio.gather(*workers, return_exceptions=True)
         
-        await self.state_manager.update_state(status="completed")
+        if not self.was_stopped:
+            state = await self.state_manager.get_state()
+            if state["completed"] + state["failed"] >= num_records:
+                await self.state_manager.update_state(status="completed")
+                return {"status": "completed"}
         
-        return {"status": "completed"}
+        current_state = await self.state_manager.get_state()
+        return {"status": current_state.get("status", "stopped")}
     
     async def stop_generation(self):
         self.is_running = False
+        self.was_stopped = True
         await self.state_manager.update_state(status="stopped")
         return {"status": "stopped"}
     

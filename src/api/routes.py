@@ -34,6 +34,9 @@ async def start_generation(request: Request):
     body = await request.json()
     num_records = body.get("num_records", None)
     
+    if pipeline.is_running:
+        return JSONResponse({"error": "Pipeline already running"}, status_code=400)
+    
     asyncio.create_task(pipeline.start_generation(num_records))
     
     return JSONResponse({"status": "started"})
