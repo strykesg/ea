@@ -41,8 +41,7 @@ class FinetuneConfig:
     dtype: str = "bfloat16"  # Use bfloat16 for efficiency
     load_in_4bit: bool = True  # 4-bit quantization for memory efficiency
 
-    # RoPE scaling configuration for long contexts
-    rope_scaling: dict = None  # Will be set for DeepSeek models
+    # Note: RoPE scaling is handled automatically in the loading process
 
     # LoRA configuration
     lora_r: int = 64  # LoRA rank
@@ -80,14 +79,7 @@ class FinetuneConfig:
                 "gate_proj", "up_proj", "down_proj"
             ]
 
-        # Set RoPE scaling for DeepSeek-V2-Lite long context support
-        if self.rope_scaling is None and "deepseek" in self.model_name.lower():
-            self.rope_scaling = {
-                "type": "dynamic",
-                "factor": float(40.0),
-                "beta_fast": float(32.0),
-                "beta_slow": float(1.0)
-            }
+        # Note: RoPE scaling is now handled in the model loading process
 
 
 class DeepSeekFinetuner:
@@ -111,33 +103,54 @@ class DeepSeekFinetuner:
         logger.info(f"Max sequence length: {self.config.max_seq_length}")
         logger.info(f"Sample packing: {self.config.sample_packing}")
 
-        if self.config.rope_scaling is not None:
-            logger.info(f"RoPE scaling: {self.config.rope_scaling}")
+        # RoPE scaling is handled automatically for DeepSeek models
 
         # Load model with Unsloth for memory efficiency
-        load_kwargs = {
-            "model_name": self.config.model_name,
-            "max_seq_length": self.config.max_seq_length,
-            "dtype": getattr(torch, self.config.dtype),
-            "load_in_4bit": self.config.load_in_4bit,
-            "token": os.getenv("HF_TOKEN"),  # HuggingFace token if needed
-        }
+        # Try with rope_scaling parameter first
+        try:
+            logger.info("Attempting to load with rope_scaling parameter...")
+            self.model, self.tokenizer = FastLanguageModel.from_pretrained(
+                model_name=self.config.model_name,
+                max_seq_length=self.config.max_seq_length,
+                dtype=getattr(torch, self.config.dtype),
+                load_in_4bit=self.config.load_in_4bit,
+                rope_scaling={
+                    "type": "dynamic",
+                    "factor": 40.0,
+                    "beta_fast": 32.0,
+                    "beta_slow": 1.0
+                },
+                token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
+            )
+        except Exception as e:
+            logger.warning(f"Loading with rope_scaling parameter failed: {e}")
+            logger.info("Falling back to standard loading...")
 
-        # Add RoPE scaling for DeepSeek models
-        if self.config.rope_scaling is not None:
-            logger.info(f"Using RoPE scaling configuration: {self.config.rope_scaling}")
-            load_kwargs["rope_scaling"] = self.config.rope_scaling
+            # Fallback: load without rope_scaling and fix after
+            self.model, self.tokenizer = FastLanguageModel.from_pretrained(
+                model_name=self.config.model_name,
+                max_seq_length=self.config.max_seq_length,
+                dtype=getattr(torch, self.config.dtype),
+                load_in_4bit=self.config.load_in_4bit,
+                token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
+            )
 
-        self.model, self.tokenizer = FastLanguageModel.from_pretrained(**load_kwargs)
-
-        # Fix RoPE scaling configuration for DeepSeek models
+        # Fix RoPE scaling configuration for DeepSeek models as fallback
         if hasattr(self.model, 'config') and hasattr(self.model.config, 'rope_scaling'):
+            logger.info(f"Model config rope_scaling: {self.model.config.rope_scaling}")
             if isinstance(self.model.config.rope_scaling, dict):
-                # Ensure all rope_scaling values are floats
+                # Ensure all values are floats
+                fixed = False
                 for key, value in self.model.config.rope_scaling.items():
                     if isinstance(value, int):
                         self.model.config.rope_scaling[key] = float(value)
                         logger.info(f"Fixed rope_scaling {key}: {value} -> {float(value)}")
+                        fixed = True
+
+                if fixed:
+                    logger.info(f"Final rope_scaling: {self.model.config.rope_scaling}")
+                else:
+                    logger.info("All rope_scaling values were already floats")
 
         # Apply LoRA adapters
         self.model = FastLanguageModel.get_peft_model(
