@@ -9,6 +9,8 @@ import torch
 import time
 import threading
 import shutil
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
@@ -59,6 +61,55 @@ def _sanitize_rope_scaling(rope: Optional[dict]) -> dict:
     if sanitized["factor"] < 1.0:
         sanitized["factor"] = 1.0
     return sanitized
+
+
+def _preflight_and_set_hf_endpoint(repo_id: str) -> str:
+    """Probe endpoints and set HF_ENDPOINT/HF_HUB_ENABLE_HF_TRANSFER accordingly.
+
+    Returns the chosen endpoint base URL.
+    """
+    candidates = []
+    # Respect user-provided HF_ENDPOINT first if set
+    if os.getenv("HF_ENDPOINT"):
+        candidates.append(os.getenv("HF_ENDPOINT"))
+    # Default Hugging Face endpoint
+    candidates.append("https://huggingface.co")
+    # Public mirror
+    candidates.append("https://hf-mirror.com")
+
+    auth_header = None
+    if os.getenv("HF_TOKEN"):
+        auth_header = f"Bearer {os.getenv('HF_TOKEN')}"
+
+    for endpoint in candidates:
+        base = endpoint.rstrip("/")
+        url = f"{base}/{repo_id}/resolve/main/config.json"
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            if auth_header:
+                req.add_header("Authorization", auth_header)
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                code = getattr(resp, 'status', 200)
+            logger.info(f"Preflight {url} → {code}")
+            if 200 <= code < 400:
+                os.environ["HF_ENDPOINT"] = base
+                # Disable transfer accel on mirror to avoid provider issues
+                if "hf-mirror" in base:
+                    os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+                logger.info(
+                    f"Using HF endpoint: {base}; HF_HUB_ENABLE_HF_TRANSFER={os.environ.get('HF_HUB_ENABLE_HF_TRANSFER','unset')}"
+                )
+                return base
+        except Exception as e:
+            logger.info(f"Preflight failed for {url}: {e}")
+
+    # If all preflights failed, prefer mirror and disable transfer as last resort
+    os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+    os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+    logger.warning(
+        f"All endpoint preflights failed; falling back to {os.environ['HF_ENDPOINT']} with HF_HUB_ENABLE_HF_TRANSFER=0"
+    )
+    return os.environ["HF_ENDPOINT"]
 
 
 @dataclass
@@ -137,11 +188,12 @@ class DeepSeekFinetuner:
 
         # Proactively download the model snapshot with progress/heartbeat logs
         repo_id = self.config.model_name
+        # Choose a working endpoint first
+        _preflight_and_set_hf_endpoint(repo_id)
         local_dir = os.path.join("models", repo_id.replace("/", "__"))
         os.makedirs(local_dir, exist_ok=True)
 
-        # Enable faster transfer if available
-        os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+        # Respect existing HF_HUB_ENABLE_HF_TRANSFER; do not force-enable here
 
         du = shutil.disk_usage(local_dir)
         logger.info(
@@ -170,6 +222,8 @@ class DeepSeekFinetuner:
                 token=os.getenv("HF_TOKEN"),
                 max_workers=8,
                 allow_patterns=None,
+                resume_download=True,
+                local_files_only=False,
             )
         finally:
             hb_stop.set()
