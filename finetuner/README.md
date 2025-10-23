@@ -1,6 +1,6 @@
 # DeepSeek-V2-Lite Fine-Tuner
 
-A one-click script to fine-tune DeepSeek-V2-Lite on your custom dataset and quantize it to GGUF format for efficient inference.
+A one-click script to fine-tune DeepSeek-V2-Lite on your custom dataset and quantize it to GGUF format for efficient inference. Features automatic RoPE scaling configuration for optimal long-context performance.
 
 ## 🚀 Quick Start
 
@@ -101,6 +101,7 @@ The fine-tuner is pre-configured for optimal performance:
 ### Model Configuration
 - **Base Model**: `deepseek-ai/DeepSeek-V2-Lite` (2.8B parameters)
 - **Sequence Length**: 16,384 tokens (supports long-form reasoning)
+- **RoPE Scaling**: Dynamic scaling (factor: 40.0, beta_fast: 32.0, beta_slow: 1.0)
 - **Sample Packing**: Enabled (improves training efficiency)
 - **Quantization**: Q4_K_M (balanced size/quality)
 
@@ -244,6 +245,14 @@ The fine-tuner uses:
 - **Q4_K_M**: Final quantization for deployment
 
 **DeepSeek-V2-Lite** is a 2.8B parameter model optimized for general language tasks with excellent long-context capabilities.
+
+The fine-tuner automatically configures **RoPE (Rotary Position Embedding) scaling** for DeepSeek models to handle the extended sequence lengths. This includes:
+
+- **Dynamic scaling** with optimized parameters for long-context understanding
+- **Automatic type conversion** to ensure compatibility with Unsloth
+- **Model config patching** to fix any integer/float mismatches in the original model configuration
+
+This enables efficient processing of long-form content while maintaining positional understanding.
 
 ## 📝 License
 

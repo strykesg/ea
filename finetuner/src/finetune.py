@@ -84,9 +84,9 @@ class FinetuneConfig:
         if self.rope_scaling is None and "deepseek" in self.model_name.lower():
             self.rope_scaling = {
                 "type": "dynamic",
-                "factor": 40.0,
-                "beta_fast": 32.0,
-                "beta_slow": 1.0
+                "factor": float(40.0),
+                "beta_fast": float(32.0),
+                "beta_slow": float(1.0)
             }
 
 
@@ -125,9 +125,19 @@ class DeepSeekFinetuner:
 
         # Add RoPE scaling for DeepSeek models
         if self.config.rope_scaling is not None:
+            logger.info(f"Using RoPE scaling configuration: {self.config.rope_scaling}")
             load_kwargs["rope_scaling"] = self.config.rope_scaling
 
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(**load_kwargs)
+
+        # Fix RoPE scaling configuration for DeepSeek models
+        if hasattr(self.model, 'config') and hasattr(self.model.config, 'rope_scaling'):
+            if isinstance(self.model.config.rope_scaling, dict):
+                # Ensure all rope_scaling values are floats
+                for key, value in self.model.config.rope_scaling.items():
+                    if isinstance(value, int):
+                        self.model.config.rope_scaling[key] = float(value)
+                        logger.info(f"Fixed rope_scaling {key}: {value} -> {float(value)}")
 
         # Apply LoRA adapters
         self.model = FastLanguageModel.get_peft_model(
