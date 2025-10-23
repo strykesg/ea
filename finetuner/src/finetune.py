@@ -106,51 +106,46 @@ class DeepSeekFinetuner:
         # RoPE scaling is handled automatically for DeepSeek models
 
         # Load model with Unsloth for memory efficiency
-        # Try with rope_scaling parameter first
-        try:
-            logger.info("Attempting to load with rope_scaling parameter...")
-            self.model, self.tokenizer = FastLanguageModel.from_pretrained(
-                model_name=self.config.model_name,
-                max_seq_length=self.config.max_seq_length,
-                dtype=getattr(torch, self.config.dtype),
-                load_in_4bit=self.config.load_in_4bit,
-                rope_scaling={
+        # Load without rope_scaling parameter to avoid validation issues
+        logger.info("Loading model (rope_scaling will be fixed after loading)...")
+        self.model, self.tokenizer = FastLanguageModel.from_pretrained(
+            model_name=self.config.model_name,
+            max_seq_length=self.config.max_seq_length,
+            dtype=getattr(torch, self.config.dtype),
+            load_in_4bit=self.config.load_in_4bit,
+            token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
+        )
+
+        # Fix RoPE scaling configuration for DeepSeek models
+        if "deepseek" in self.config.model_name.lower():
+            logger.info("DeepSeek model detected - ensuring rope_scaling configuration...")
+
+            # Ensure the model has the correct rope_scaling config
+            if not hasattr(self.model.config, 'rope_scaling') or self.model.config.rope_scaling is None:
+                self.model.config.rope_scaling = {
                     "type": "dynamic",
                     "factor": 40.0,
                     "beta_fast": 32.0,
                     "beta_slow": 1.0
-                },
-                token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
-            )
-        except Exception as e:
-            logger.warning(f"Loading with rope_scaling parameter failed: {e}")
-            logger.info("Falling back to standard loading...")
+                }
+                logger.info(f"Set rope_scaling: {self.model.config.rope_scaling}")
+            else:
+                logger.info(f"Existing rope_scaling: {self.model.config.rope_scaling}")
+                # Override with correct values
+                self.model.config.rope_scaling = {
+                    "type": "dynamic",
+                    "factor": 40.0,
+                    "beta_fast": 32.0,
+                    "beta_slow": 1.0
+                }
+                logger.info(f"Updated rope_scaling: {self.model.config.rope_scaling}")
 
-            # Fallback: load without rope_scaling and fix after
-            self.model, self.tokenizer = FastLanguageModel.from_pretrained(
-                model_name=self.config.model_name,
-                max_seq_length=self.config.max_seq_length,
-                dtype=getattr(torch, self.config.dtype),
-                load_in_4bit=self.config.load_in_4bit,
-                token=os.getenv("HF_TOKEN"),  # HuggingFace token if needed
-            )
-
-        # Fix RoPE scaling configuration for DeepSeek models as fallback
-        if hasattr(self.model, 'config') and hasattr(self.model.config, 'rope_scaling'):
-            logger.info(f"Model config rope_scaling: {self.model.config.rope_scaling}")
-            if isinstance(self.model.config.rope_scaling, dict):
-                # Ensure all values are floats
-                fixed = False
-                for key, value in self.model.config.rope_scaling.items():
-                    if isinstance(value, int):
-                        self.model.config.rope_scaling[key] = float(value)
-                        logger.info(f"Fixed rope_scaling {key}: {value} -> {float(value)}")
-                        fixed = True
-
-                if fixed:
-                    logger.info(f"Final rope_scaling: {self.model.config.rope_scaling}")
-                else:
-                    logger.info("All rope_scaling values were already floats")
+            # Force the model to use the updated config
+            try:
+                self.model.config._update(self.model.config.to_dict())
+                logger.info("Model config successfully updated")
+            except:
+                logger.info("Config update method not available, config set directly")
 
         # Apply LoRA adapters
         self.model = FastLanguageModel.get_peft_model(
