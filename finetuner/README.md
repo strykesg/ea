@@ -101,7 +101,7 @@ The fine-tuner is pre-configured for optimal performance:
 ### Model Configuration
 - **Base Model**: `deepseek-ai/DeepSeek-V2-Lite` (2.8B parameters)
 - **Sequence Length**: 16,384 tokens (supports long-form reasoning)
-- **RoPE Scaling**: Dynamic scaling (factor: 40.0, beta_fast: 32.0, beta_slow: 1.0)
+- **RoPE Scaling**: Automatic configuration for long contexts
 - **Sample Packing**: Enabled (improves training efficiency)
 - **Quantization**: Q4_K_M (balanced size/quality)
 
