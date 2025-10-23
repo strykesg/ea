@@ -1,0 +1,38 @@
+1.3. Dynamic Prompting for Unparalleled Question Diversity
+To ensure the dataset's richness, the Question Generation stage will employ a dynamic, multi-faceted system prompt. This meta-prompt will instruct the generator LLM to adopt a variety of expert personas and generate questions across a wide spectrum of financial disciplines and analytical frameworks. This application of advanced prompt engineering is designed to prevent the generation of a monolithic, repetitive set of questions and instead produce a corpus that reflects the true complexity of financial markets.   
+
+The master prompt will instruct the generator to cycle through combinations of the following components:
+
+Expert Personas: Quantitative Analyst, Value Investor, Macroeconomic Strategist, Technical Trader, Risk Manager, Behavioral Finance Expert.
+
+Question Categories:
+
+Predictive: "What is the likely price action of BTC if the next CPI print is above expectations by 0.2%?"
+
+Explanatory: "Explain the second-order effects of a strengthening US Dollar on emerging market equities."
+
+Comparative: "Compare the long-term viability and tokenomics of Ethereum's Proof-of-Stake model versus Solana's Proof-of-History."
+
+Counterfactual: "What would have been the optimal portfolio allocation strategy during the 2020 COVID-19 crash to minimize drawdown while capturing the subsequent recovery?"
+
+Required Data Synthesis: The prompt will guide the LLM to formulate questions that necessitate the synthesis of diverse data types, such as technical indicators (RSI, Bollinger Bands), fundamental data (P/E ratios, free cash flow), macroeconomic data (unemployment rates, GDP growth), and real-time news sentiment.
+
+The quality of a finetuned model is a direct function of the breadth and complexity of the problems it is trained to solve. By systematically engineering the question generation process, the system directly shapes and expands the "problem space" that the final deepseek-coder-v2-instruct model will master. An elite trader must synthesize information from numerous, disparate domains. This dynamic prompting strategy ensures the resulting dataset mirrors this multi-disciplinary complexity. Consequently, when the model is finetuned on this data, it learns not just isolated facts, but the intricate patterns of reasoning that connect these domains, elevating its capabilities from a simple Q&A bot to a more holistic analytical engine.
+
+1.4. Structuring Data for Optimal Axolotl Finetuning
+The final, validated data will be formatted into a .jsonl file, where each line constitutes a single training example. The chosen schema will be the modern chat_template (also known as the OpenAI Messages format), which is natively supported by the Axolotl finetuning framework. This format is superior to legacy structures like alpaca or sharegpt due to its flexibility, explicit role definition, and direct alignment with the prompting conventions of contemporary instruction-tuned models.   
+
+Each line in the dataset.jsonl file will adhere to the following JSON schema:
+
+JSON
+{
+  "messages":
+}
+This structure is optimized for finetuning with Axolotl for several key reasons:
+
+Embedded Persona: Including the expert persona as the system message in every single training example provides a constant, powerful signal that reinforces the desired behavior, tone, and analytical framework throughout the finetuning process.
+
+Instructional Format: The user -> assistant conversational turn perfectly mirrors the instruction-following paradigm for which deepseek-coder-v2-instruct was specifically designed and tuned.   
+
+Seamless Axolotl Integration: This schema is directly consumable by Axolotl by specifying type: chat_template in the configuration YAML. This minimizes the need for complex preprocessing scripts and ensures that Axolotl correctly interprets the conversational turns, automatically applying the appropriate loss masks to train the model exclusively on predicting the assistant's response.   
+

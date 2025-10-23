@@ -73,11 +73,35 @@ Set these environment variables to configure the pipeline:
 - `GET /api/stream` - Server-Sent Events stream for real-time updates
 
 ## Deployment
-The app is configured for VM deployment, which is ideal for this stateful, long-running pipeline:
+
+### Option 1: Replit Deployment
+The app is configured for VM deployment on Replit, which is ideal for this stateful, long-running pipeline:
 - Maintains state in server memory
 - Keeps workers running continuously
 - Perfect for high-concurrency data generation
 - Click "Deploy" in Replit to publish with a live URL
+
+### Option 2: Dokploy Deployment
+For self-hosted deployment on your own VPS using Dokploy:
+- Production-ready Dockerfile included
+- Full deployment guide in `DEPLOY_DOKPLOY.md`
+- Supports custom domains with automatic SSL
+- Resource control and scaling
+- See [Dokploy Deployment Guide](./DEPLOY_DOKPLOY.md) for detailed instructions
+
+## Files
+
+- `main.py` - Application entry point
+- `config.py` - Configuration with environment variables
+- `src/core/llm_client.py` - OpenRouter API client
+- `src/core/pipeline.py` - Data generation pipeline
+- `src/core/state_manager.py` - In-memory state management
+- `src/api/app.py` - FastAPI application
+- `src/api/routes.py` - API endpoints
+- `templates/dashboard.html` - Web dashboard
+- `Dockerfile` - Production Docker image
+- `docker-compose.yml` - Local Docker testing
+- `DEPLOY_DOKPLOY.md` - Dokploy deployment guide
 
 ## Recent Changes
 - 2025-10-23: Initial project setup with FastAPI and OpenRouter integration
@@ -88,4 +112,5 @@ The app is configured for VM deployment, which is ideal for this stateful, long-
 - 2025-10-23: Updated defaults to mistralai/mistral-nemo and deepseek/deepseek-r1-0528-qwen3-8b
 - 2025-10-23: Added live activity feed to show questions as they're generated in real-time
 - 2025-10-23: Made MAX_WORKERS configurable via environment variable for speed control
-- 2025-10-23: Configured VM deployment for production use
+- 2025-10-23: Configured VM deployment for production use (Replit)
+- 2025-10-23: Added Dockerfile and Docker Compose for Dokploy deployment

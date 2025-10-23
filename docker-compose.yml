@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - GENERATOR_MODEL=${GENERATOR_MODEL:-mistralai/mistral-nemo}
+      - REFINER_MODEL=${REFINER_MODEL:-deepseek/deepseek-r1-0528-qwen3-8b}
+      - MAX_WORKERS=${MAX_WORKERS:-10}
+      - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-20}
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-in-production}
+    volumes:
+      - ./output:/app/output
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  output_data:

@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.pythonlibs/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Output files
+output/*.jsonl
+
+# Logs
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Replit specific
+.replit
+replit.nix
+.config/
+
+# Package management
+# uv.lock is needed for frozen dependency installation
+
+# Test files
+tests/
+test_*/
+*_test.py
+
+# Development
+.pytest_cache/
+.coverage
+htmlcov/
