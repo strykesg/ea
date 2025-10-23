@@ -31,6 +31,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _sanitize_rope_scaling(rope: Optional[dict]) -> dict:
+    """Ensure rope_scaling dict has correct types/values.
+
+    DeepSeek expects dynamic RoPE with float values. If anything is
+    missing or has integer types, coerce to sane float defaults.
+    """
+    default = {
+        "type": "dynamic",
+        "factor": 40.0,
+        "beta_fast": 32.0,
+        "beta_slow": 1.0,
+    }
+    if not isinstance(rope, dict):
+        return default
+
+    sanitized = {
+        "type": str(rope.get("type", default["type"])),
+        "factor": float(rope.get("factor", default["factor"])),
+        "beta_fast": float(rope.get("beta_fast", default["beta_fast"])),
+        "beta_slow": float(rope.get("beta_slow", default["beta_slow"])),
+    }
+    if sanitized["factor"] < 1.0:
+        sanitized["factor"] = 1.0
+    return sanitized
+
+
 @dataclass
 class FinetuneConfig:
     """Configuration for fine-tuning."""
@@ -120,32 +146,10 @@ class DeepSeekFinetuner:
         if "deepseek" in self.config.model_name.lower():
             logger.info("DeepSeek model detected - ensuring rope_scaling configuration...")
 
-            # Ensure the model has the correct rope_scaling config
-            if not hasattr(self.model.config, 'rope_scaling') or self.model.config.rope_scaling is None:
-                self.model.config.rope_scaling = {
-                    "type": "dynamic",
-                    "factor": 40.0,
-                    "beta_fast": 32.0,
-                    "beta_slow": 1.0
-                }
-                logger.info(f"Set rope_scaling: {self.model.config.rope_scaling}")
-            else:
-                logger.info(f"Existing rope_scaling: {self.model.config.rope_scaling}")
-                # Override with correct values
-                self.model.config.rope_scaling = {
-                    "type": "dynamic",
-                    "factor": 40.0,
-                    "beta_fast": 32.0,
-                    "beta_slow": 1.0
-                }
-                logger.info(f"Updated rope_scaling: {self.model.config.rope_scaling}")
-
-            # Force the model to use the updated config
-            try:
-                self.model.config._update(self.model.config.to_dict())
-                logger.info("Model config successfully updated")
-            except:
-                logger.info("Config update method not available, config set directly")
+            # Sanitize in-place to ensure float types without forcing a full config re-validate
+            current = getattr(self.model.config, 'rope_scaling', None)
+            self.model.config.rope_scaling = _sanitize_rope_scaling(current)
+            logger.info(f"rope_scaling set to: {self.model.config.rope_scaling}")
 
         # Apply LoRA adapters
         self.model = FastLanguageModel.get_peft_model(
