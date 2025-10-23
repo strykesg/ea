@@ -239,19 +239,34 @@
             font-size: 0.75rem;
         }
         
-        .activity-instruction {
+        .activity-question {
             color: #666;
             font-size: 0.85rem;
             margin-top: 6px;
             font-style: italic;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            display: none;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-download.visible {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 AI Training Data Generator</h1>
-            <p class="subtitle">High-concurrency pipeline powered by OpenRouter API</p>
+            <h1>📈 Elite Trading AI Training Data Generator</h1>
+            <p class="subtitle">Dynamic question generation with expert personas for Axolotl finetuning</p>
         </div>
         
         <div class="dashboard">
@@ -323,6 +338,10 @@
                     ⏸ Stop Generation
                 </button>
             </div>
+            
+            <button id="download-btn" class="btn-download" onclick="downloadJSONL()">
+                📥 Download Training Data (JSONL)
+            </button>
         </div>
     </div>
     
@@ -381,6 +400,13 @@
                 lastCompleted = 0;
             }
             
+            const downloadBtn = document.getElementById('download-btn');
+            if (data.status === 'completed') {
+                downloadBtn.classList.add('visible');
+            } else {
+                downloadBtn.classList.remove('visible');
+            }
+            
             if (data.activity && data.activity.length > 0) {
                 updateActivityFeed(data.activity);
             }
@@ -405,11 +431,11 @@
                 message.textContent = activity.message;
                 item.appendChild(message);
                 
-                if (activity.instruction) {
-                    const instruction = document.createElement('div');
-                    instruction.className = 'activity-instruction';
-                    instruction.textContent = `"${activity.instruction}"`;
-                    item.appendChild(instruction);
+                if (activity.question) {
+                    const question = document.createElement('div');
+                    question.className = 'activity-question';
+                    question.textContent = `"${activity.question}"`;
+                    item.appendChild(question);
                 }
                 
                 const time = document.createElement('div');
@@ -459,6 +485,10 @@
                 console.error('Error stopping generation:', error);
                 alert('Failed to stop generation');
             }
+        }
+        
+        function downloadJSONL() {
+            window.location.href = '/api/download';
         }
         
         connectEventSource();

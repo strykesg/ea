@@ -41,8 +41,8 @@ class DataPipeline:
                     "timestamp": datetime.utcnow().isoformat(),
                     "type": "generated",
                     "record_id": record_id,
-                    "instruction": generated.get("instruction", "")[:100],
-                    "message": f"Generated #{record_id}: {generated.get('instruction', '')[:80]}..."
+                    "question": generated.get("question", "")[:100],
+                    "message": f"Generated #{record_id}: {generated.get('question', '')[:80]}..."
                 })
                 
                 await self.state_manager.add_activity({
@@ -56,11 +56,20 @@ class DataPipeline:
                 await self.state_manager.increment("refined")
                 
                 record = {
-                    "id": record_id,
-                    "instruction": refined.get("instruction", ""),
-                    "input": refined.get("input", ""),
-                    "output": refined.get("output", ""),
-                    "generated_at": datetime.utcnow().isoformat()
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": refined.get("system_prompt", "You are an expert financial analyst and trader.")
+                        },
+                        {
+                            "role": "user",
+                            "content": refined.get("question", "")
+                        },
+                        {
+                            "role": "assistant",
+                            "content": refined.get("answer", "")
+                        }
+                    ]
                 }
                 
                 await self.state_manager.mark_completed(record_id, record)
@@ -70,8 +79,8 @@ class DataPipeline:
                     "timestamp": datetime.utcnow().isoformat(),
                     "type": "completed",
                     "record_id": record_id,
-                    "instruction": record.get("instruction", "")[:100],
-                    "message": f"Completed #{record_id}: {record.get('instruction', '')[:80]}..."
+                    "question": refined.get("question", "")[:100],
+                    "message": f"Completed #{record_id}: {refined.get('question', '')[:80]}..."
                 })
                 
                 return record

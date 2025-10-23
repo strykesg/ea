@@ -1,7 +1,9 @@
-# AI Training Data Generator
+# Elite Trading AI Training Data Generator
 
 ## Overview
-High-concurrency data generation pipeline for creating AI training datasets in JSONL format compatible with Axolotl. The system uses a two-step LLM process via OpenRouter API: fast generation (Mistral Nemo) followed by powerful refinement (DeepSeek R1).
+High-concurrency data generation pipeline for creating elite-level trading AI training datasets in JSONL format for Axolotl finetuning. The system uses dynamic prompt engineering with expert personas to generate diverse financial questions, then a two-step LLM process via OpenRouter API: fast question generation (Mistral Nemo) followed by powerful answer refinement (DeepSeek R1).
+
+The pipeline generates questions across multiple expert personas (Quantitative Analyst, Value Investor, Macroeconomic Strategist, Technical Trader, Risk Manager, Behavioral Finance Expert) and question categories (predictive, explanatory, comparative, counterfactual) to ensure maximum dataset diversity.
 
 ## Architecture
 - **FastAPI** backend with async workers
@@ -46,14 +48,18 @@ Set these environment variables to configure the pipeline:
 - `TARGET_RECORDS`: Default number of records to generate (default: 5000)
 
 ## Features
+✅ **Dynamic prompt engineering with 6 expert personas** (Quant Analyst, Value Investor, Macro Strategist, etc.)
+✅ **4 question categories** (Predictive, Explanatory, Comparative, Counterfactual)
+✅ **Diverse trading topics** (crypto, forex, equities, derivatives, DeFi, etc.)
+✅ **Axolotl-compatible chat_template format** (system/user/assistant messages)
 ✅ High-concurrency async pipeline with worker pools
-✅ Two-step LLM process (generate + refine)
-✅ Real-time progress monitoring via web dashboard
+✅ Two-step LLM process (generate questions + refine answers)
+✅ Real-time progress monitoring via Server-Sent Events (SSE)
 ✅ **Live activity feed showing questions as they're generated**
+✅ **One-click JSONL download** when generation completes
 ✅ **Configurable worker count via MAX_WORKERS environment variable**
 ✅ Automatic retry with exponential backoff
 ✅ In-memory state management for progress tracking
-✅ JSONL output format for Axolotl
 ✅ **VM deployment configuration for production**
 
 ## Usage
@@ -103,6 +109,30 @@ For self-hosted deployment on your own VPS using Dokploy:
 - `docker-compose.yml` - Local Docker testing
 - `DEPLOY_DOKPLOY.md` - Dokploy deployment guide
 
+## Output Format
+The system generates training data in the Axolotl-compatible `chat_template` format. Each JSONL line contains:
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an elite [persona] with deep expertise in financial markets..."
+    },
+    {
+      "role": "user",
+      "content": "[Generated trading question requiring multi-dimensional analysis]"
+    },
+    {
+      "role": "assistant",
+      "content": "[Comprehensive expert answer synthesizing technical, fundamental, and macro factors]"
+    }
+  ]
+}
+```
+
+This format is optimized for Axolotl finetuning with `type: chat_template` in your config YAML.
+
 ## Recent Changes
 - 2025-10-23: Initial project setup with FastAPI and OpenRouter integration
 - 2025-10-23: Implemented in-memory state manager (removed Redis dependency)
@@ -114,3 +144,7 @@ For self-hosted deployment on your own VPS using Dokploy:
 - 2025-10-23: Made MAX_WORKERS configurable via environment variable for speed control
 - 2025-10-23: Configured VM deployment for production use (Replit)
 - 2025-10-23: Added Dockerfile and Docker Compose for Dokploy deployment
+- 2025-10-23: **Implemented dynamic prompt engineering with 6 expert personas and 4 question categories**
+- 2025-10-23: **Changed output to Axolotl chat_template format (system/user/assistant messages)**
+- 2025-10-23: **Added JSONL download button in dashboard (appears when generation completes)**
+- 2025-10-23: **Dashboard now uses EventSource (SSE) for real-time updates instead of polling**

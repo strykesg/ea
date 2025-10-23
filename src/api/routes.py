@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import asyncio
 import json
+import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -68,3 +69,20 @@ async def get_activity(request: Request):
     pipeline = request.app.state.pipeline
     activity = await pipeline.state_manager.get_recent_activity(50)
     return JSONResponse({"activity": activity})
+
+@router.get("/api/download")
+async def download_jsonl(request: Request):
+    pipeline = request.app.state.pipeline
+    output_file = pipeline.output_file
+    
+    if not os.path.exists(output_file):
+        return JSONResponse({"error": "No training data available"}, status_code=404)
+    
+    return FileResponse(
+        path=output_file,
+        media_type="application/jsonl",
+        filename="training_data.jsonl",
+        headers={
+            "Content-Disposition": "attachment; filename=training_data.jsonl"
+        }
+    )
