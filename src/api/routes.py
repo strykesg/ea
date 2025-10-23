@@ -86,3 +86,13 @@ async def download_jsonl(request: Request):
             "Content-Disposition": "attachment; filename=training_data.jsonl"
         }
     )
+
+@router.post("/api/reset")
+async def reset_dataset(request: Request):
+    pipeline = request.app.state.pipeline
+    
+    if pipeline.is_running:
+        return JSONResponse({"error": "Cannot reset while generation is running"}, status_code=400)
+    
+    result = await pipeline.reset_dataset()
+    return JSONResponse(result)

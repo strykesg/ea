@@ -260,6 +260,31 @@
         .btn-download.visible {
             display: block;
         }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+            color: white;
+            margin-top: 15px;
+        }
+        
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(229, 57, 53, 0.4);
+        }
+        
+        .reset-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            color: #856404;
+            display: none;
+        }
+        
+        .reset-warning.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -300,6 +325,11 @@
             <div class="metric">
                 <div class="metric-label">Throughput</div>
                 <div class="metric-value throughput" id="throughput">0/min</div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Total Persisted</div>
+                <div class="metric-value" id="total-persisted">0</div>
             </div>
         </div>
         
@@ -342,6 +372,14 @@
             <button id="download-btn" class="btn-download" onclick="downloadJSONL()">
                 📥 Download Training Data (JSONL)
             </button>
+            
+            <div id="reset-warning" class="reset-warning">
+                ⚠️ Warning: This will permanently delete all generated training data from the database and JSONL file.
+            </div>
+            
+            <button class="btn-reset" onclick="confirmReset()">
+                🗑️ Reset Dataset (Delete All Records)
+            </button>
         </div>
     </div>
     
@@ -370,6 +408,7 @@
             document.getElementById('refined').textContent = data.refined || 0;
             document.getElementById('completed').textContent = data.completed || 0;
             document.getElementById('failed').textContent = data.failed || 0;
+            document.getElementById('total-persisted').textContent = data.total_persisted || 0;
             
             const statusEl = document.getElementById('status');
             statusEl.textContent = data.status || 'idle';
@@ -489,6 +528,35 @@
         
         function downloadJSONL() {
             window.location.href = '/api/download';
+        }
+        
+        async function confirmReset() {
+            const confirmed = confirm(
+                '⚠️ WARNING: This will permanently delete ALL generated training data!\n\n' +
+                'Are you absolutely sure you want to reset the dataset?\n\n' +
+                'This action cannot be undone.'
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'reset') {
+                    alert('✅ Dataset reset successfully! All records have been deleted.');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Failed to reset dataset'));
+                }
+            } catch (error) {
+                console.error('Error resetting dataset:', error);
+                alert('❌ Failed to reset dataset: ' + error.message);
+            }
         }
         
         connectEventSource();
