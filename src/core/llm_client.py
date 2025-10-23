@@ -145,7 +145,6 @@ Do not include any explanation, just the JSON object."""
     async def refine_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
         question = record.get("question", "")
         persona = record.get("persona", "Expert Trader")
-        system_prompt = record.get("system_prompt", "You are an expert financial analyst.")
         
         refinement_system = f"""You are an elite {persona} with decades of experience in financial markets. You provide comprehensive, deeply analytical responses that synthesize technical analysis, fundamental data, macroeconomic factors, and market sentiment."""
         
@@ -183,5 +182,5 @@ Return ONLY a valid JSON object:
             "question": question,
             "answer": answer,
             "persona": persona,
-            "system_prompt": system_prompt
+            "system_prompt": refinement_system
         }
