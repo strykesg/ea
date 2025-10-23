@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Training Data Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .progress-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        
+        .status-idle { background: #e0e0e0; color: #666; }
+        .status-running { background: #4caf50; color: white; }
+        .status-completed { background: #2196f3; color: white; }
+        .status-stopped { background: #ff9800; color: white; }
+        
+        .throughput {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AI Training Data Generator</h1>
+            <p class="subtitle">High-concurrency pipeline powered by OpenRouter API</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="metric">
+                <div class="metric-label">Status</div>
+                <div class="metric-value">
+                    <span id="status" class="status-badge status-idle">Idle</span>
+                </div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Generated</div>
+                <div class="metric-value" id="generated">0</div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Refined</div>
+                <div class="metric-value" id="refined">0</div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Completed</div>
+                <div class="metric-value" id="completed">0</div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Failed</div>
+                <div class="metric-value" id="failed">0</div>
+            </div>
+            
+            <div class="metric">
+                <div class="metric-label">Throughput</div>
+                <div class="metric-value throughput" id="throughput">0/min</div>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <h2 style="margin-bottom: 20px;">Generation Progress</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%;">
+                    <span id="progress-text">0%</span>
+                </div>
+            </div>
+            <p style="color: #666;">
+                <span id="progress-info">0 of 0 records completed</span>
+            </p>
+        </div>
+        
+        <div class="controls">
+            <h2 style="margin-bottom: 20px;">Pipeline Controls</h2>
+            
+            <div class="control-group">
+                <label for="num-records">Number of Records to Generate</label>
+                <input type="number" id="num-records" value="5000" min="1" max="100000">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-start" onclick="startGeneration()">
+                    ▶ Start Generation
+                </button>
+                <button class="btn-stop" onclick="stopGeneration()">
+                    ⏸ Stop Generation
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let eventSource = null;
+        let startTime = null;
+        let lastCompleted = 0;
+        let completedHistory = [];
+        
+        function connectEventSource() {
+            eventSource = new EventSource('/api/stream');
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateDashboard(data);
+            };
+            
+            eventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                setTimeout(connectEventSource, 5000);
+            };
+        }
+        
+        function updateDashboard(data) {
+            document.getElementById('generated').textContent = data.generated || 0;
+            document.getElementById('refined').textContent = data.refined || 0;
+            document.getElementById('completed').textContent = data.completed || 0;
+            document.getElementById('failed').textContent = data.failed || 0;
+            
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = data.status || 'idle';
+            statusEl.className = 'status-badge status-' + (data.status || 'idle');
+            
+            const total = data.total_records || 0;
+            const completed = data.completed || 0;
+            const progress = total > 0 ? (completed / total * 100).toFixed(1) : 0;
+            
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = progress + '%';
+            document.getElementById('progress-info').textContent = 
+                `${completed} of ${total} records completed`;
+            
+            if (data.status === 'running') {
+                if (!startTime) {
+                    startTime = Date.now();
+                    lastCompleted = completed;
+                }
+                
+                const elapsedMinutes = (Date.now() - startTime) / 60000;
+                if (elapsedMinutes > 0) {
+                    const throughput = ((completed - lastCompleted) / elapsedMinutes).toFixed(1);
+                    document.getElementById('throughput').textContent = throughput + '/min';
+                }
+            } else if (data.status === 'completed' || data.status === 'stopped') {
+                startTime = null;
+                lastCompleted = 0;
+            }
+        }
+        
+        async function startGeneration() {
+            const numRecords = parseInt(document.getElementById('num-records').value);
+            
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ num_records: numRecords })
+                });
+                
+                const result = await response.json();
+                console.log('Generation started:', result);
+            } catch (error) {
+                console.error('Error starting generation:', error);
+                alert('Failed to start generation');
+            }
+        }
+        
+        async function stopGeneration() {
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                console.log('Generation stopped:', result);
+            } catch (error) {
+                console.error('Error stopping generation:', error);
+                alert('Failed to stop generation');
+            }
+        }
+        
+        connectEventSource();
+        
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => updateDashboard(data))
+            .catch(error => console.error('Error fetching initial status:', error));
+    </script>
+</body>
+</html>
