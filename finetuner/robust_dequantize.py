@@ -281,8 +281,8 @@ def main():
     try:
         success = robust_dequantize_model(model_path, output_path)
         if success:
-            print("
-📝 Next steps:"            print(f"   1. Convert to GGUF: python llama.cpp/convert_hf_to_gguf.py {output_path} --outtype f16 --outfile outputs/model_fp16.gguf")
+            print("\n📝 Next steps:")
+            print(f"   1. Convert to GGUF: python llama.cpp/convert_hf_to_gguf.py {output_path} --outtype f16 --outfile outputs/model_fp16.gguf")
             print(f"   2. Quantize: ./llama.cpp/build/bin/quantize outputs/model_fp16.gguf outputs/model_q4_k_m.gguf Q4_K_M")
             print(f"   3. Test: ./test_gguf.sh outputs/model_q4_k_m.gguf")
             return 0

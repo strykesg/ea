@@ -9,17 +9,25 @@ NotImplementedError: Quant method is not yet supported: 'bitsandbytes'
 ```
 
 ## Solution
-The new `proper_dequantize.py` script properly handles bitsandbytes quantization by:
+The updated scripts handle various model corruption issues:
 
-1. **Detecting quantization**: Checks if the model has a `quantization_config` in its config.json
-2. **Loading with quantization**: If quantized, loads the model with bitsandbytes quantization enabled
-3. **Actual dequantization**: Calls `.dequantize()` on each quantized parameter to convert back to full precision float16
-4. **Cleaning up**: Removes quantization hooks and config entries
-5. **Artifact cleanup**: Automatically runs `clean_quantization_artifacts.py` to remove quantization metadata tensors
-6. **Saving clean model**: Saves the fully dequantized model
+1. **`robust_dequantize.py`**: Robust dequantization that bypasses model loading issues
+   - Loads state dict directly from safetensors files
+   - Detects and fixes tensor shape mismatches
+   - Removes quantization artifacts and corrupted tensors
+   - Handles models with missing or corrupted weights
+
+2. **`inspect_model.py`**: Diagnostic tool to inspect model structure
+   - Shows tensor shapes and identifies suspicious ones
+   - Tests model loading to diagnose issues
+   - Provides detailed information about model architecture
+
+3. **`clean_quantization_artifacts.py`**: Thoroughly removes quantization metadata
+   - Scans all safetensors files for quantization artifacts
+   - Removes `.absmax`, `.quant_map`, `.quant_state` tensors
+   - Cleans model configuration
 
 ## Additional Tools
-- **`clean_quantization_artifacts.py`**: Thoroughly removes all quantization metadata from safetensors files
 - **`clean_temp_model.sh`**: Manual cleanup script for the temp model directory
 - **`check_quantization.py`**: Verify if a model still has quantization artifacts
 

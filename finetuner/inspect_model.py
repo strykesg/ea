@@ -93,11 +93,11 @@ def inspect_model_structure(model_path):
         for name, shape, file in suspicious_tensors:
             print(f"   - {name} in {file}: {shape}")
     else:
-        print("   ✅ No obviously suspicious tensor shapes found"
+        print("   ✅ No obviously suspicious tensor shapes found")
 
     # Try to load with transformers to see what happens
-    print("
-🔄 Testing model loading..."    try:
+    print("\n🔄 Testing model loading...")
+    try:
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         print("   Loading model with transformers...")
@@ -108,7 +108,8 @@ def inspect_model_structure(model_path):
             trust_remote_code=True,
             low_cpu_mem_usage=True
         )
-        print("   ✅ Model loaded successfully!"        print(f"   Model type: {type(model)}")
+        print("   ✅ Model loaded successfully!")
+        print(f"   Model type: {type(model)}")
         print(f"   Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
         # Clean up
