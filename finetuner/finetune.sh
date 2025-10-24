@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --batch_size SIZE    Training batch size (default: 2)"
-            echo "  --max_steps STEPS    Maximum training steps (default: 60)"
+            echo "  --max_steps STEPS    Maximum training steps (default: 621 for 3 epochs)"
             echo "  --seq_length LENGTH  Maximum sequence length (default: 16384)"
             echo "  --help              Show this help message"
             exit 0

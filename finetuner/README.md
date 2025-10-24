@@ -111,7 +111,7 @@ The fine-tuner is pre-configured for optimal performance:
 - **Learning Rate**: 8e-5
 - **Data Workers**: 16 for H200/H100, 8 for consumer GPUs
 - **Performance**: Automatic GPU detection and optimization
-- **Training Steps**: 60 (adjustable for your dataset size)
+- **Training Steps**: 621 (3 epochs for 4962 samples, adjustable)
 
 ## 🎛️ Usage
 

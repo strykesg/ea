@@ -183,7 +183,7 @@ class FinetuneConfig:
     per_device_train_batch_size: int = 24  # H200 can handle much larger batches (141GB VRAM)
     gradient_accumulation_steps: int = 1   # No accumulation needed for H200
     warmup_steps: int = 5
-    max_steps: int = 60  # Small number for quick fine-tuning
+    max_steps: int = 621  # 3 epochs for 4962 samples with batch size 24
     learning_rate: float = 8e-5
     logging_steps: int = 10
     optim: str = "adamw_8bit"
@@ -466,6 +466,10 @@ class DeepSeekFinetuner:
             gradient_checkpointing=False,  # Disable for speed on H200
             remove_unused_columns=False,
             label_smoothing_factor=0.0,
+            # Enable progress bar and better logging
+            disable_tqdm=False,
+            log_level="info",
+            logging_strategy="steps",
         )
 
         # Create trainer with Unsloth optimizations - optimized for H200
