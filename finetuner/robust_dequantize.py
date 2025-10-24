@@ -122,6 +122,13 @@ def fix_tensor_shapes(state_dict, expected_config):
                 print(f"     Expected: {expected_shape}")
                 print(f"     Actual: {actual_shape}")
 
+                # Special case: known corrupted tensor from error logs
+                if actual_shape == (11206656, 1) and expected_shape == (2048, 10944):
+                    print(f"     🚨 KNOWN CORRUPTED TENSOR: This is the tensor causing loading failures")
+                    keys_to_remove.append(name)
+                    removed_count += 1
+                    continue
+
                 # Try to reshape if total elements match
                 expected_elements = np.prod(expected_shape)
                 actual_elements = tensor.numel()
@@ -137,16 +144,21 @@ def fix_tensor_shapes(state_dict, expected_config):
                         keys_to_remove.append(name)
                         removed_count += 1
                 else:
-                    print(f"     ❌ Element count mismatch: {actual_elements} vs {expected_elements}")
+                    print(f"     ❌ Element count mismatch: {actual_elements:,} vs {expected_elements:,}")
                     keys_to_remove.append(name)
                     removed_count += 1
         else:
-            # Check for suspicious shapes
+            # Check for suspicious shapes that indicate corruption
             if len(tensor.shape) == 2:
                 rows, cols = tensor.shape
                 if rows == 1 or (rows > 100000 and cols == 1):
                     print(f"   ⚠️  Suspicious tensor: {name} shape {tensor.shape}")
-                    # These are likely quantization artifacts or corrupted weights
+                    print(f"      Likely quantization artifact or corrupted weight")
+                    keys_to_remove.append(name)
+                    removed_count += 1
+                elif rows > 100000 or cols > 100000:
+                    print(f"   ⚠️  Very large tensor: {name} shape {tensor.shape}")
+                    print(f"      May be corrupted data")
                     keys_to_remove.append(name)
                     removed_count += 1
 
@@ -155,6 +167,19 @@ def fix_tensor_shapes(state_dict, expected_config):
         del state_dict[key]
 
     print(f"   Fixed {fixed_count} tensors, removed {removed_count} problematic tensors")
+
+    # Report on critical missing tensors
+    missing_critical = []
+    for expected_name, expected_shape in expected_shapes.items():
+        if expected_name not in state_dict:
+            missing_critical.append((expected_name, expected_shape))
+
+    if missing_critical:
+        print(f"\n⚠️  Critical tensors missing after cleanup: {len(missing_critical)}")
+        for name, shape in missing_critical[:5]:  # Show first 5
+            print(f"   - {name}: expected shape {shape}")
+        if len(missing_critical) > 5:
+            print(f"   ... and {len(missing_critical) - 5} more")
 
     return state_dict
 

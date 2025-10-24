@@ -61,6 +61,20 @@ def inspect_model_structure(model_path):
             total_tensors += file_tensors
             print(f"   Contains {file_tensors} tensors")
 
+            # Check ALL tensors for suspicious shapes
+            for name, tensor in state_dict.items():
+                # Check for suspicious shapes
+                if len(tensor.shape) == 2:
+                    rows, cols = tensor.shape
+                    # Check for unusual aspect ratios or very large/small dimensions
+                    if rows == 1 or cols == 1:
+                        suspicious_tensors.append((name, tensor.shape, safetensors_file.name))
+                    elif rows > 100000 or cols > 100000:
+                        suspicious_tensors.append((name, tensor.shape, safetensors_file.name))
+                    # Also check for element count mismatches with expected shapes
+                    elif name.endswith('.weight') and tensor.numel() > 50000000:  # Very large tensors
+                        suspicious_tensors.append((name, tensor.shape, safetensors_file.name))
+
             # Show first few tensors and their shapes
             count = 0
             for name, tensor in state_dict.items():
@@ -70,15 +84,6 @@ def inspect_model_structure(model_path):
                 shape_str = ' x '.join(str(s) for s in tensor.shape)
                 size_mb = tensor.numel() * tensor.element_size() / (1024 * 1024)
                 print(f"   {name}: {tensor.dtype}, shape [{shape_str}], size {size_mb:.1f}MB")
-
-                # Check for suspicious shapes
-                if len(tensor.shape) == 2:
-                    rows, cols = tensor.shape
-                    # Check for unusual aspect ratios or very large/small dimensions
-                    if rows == 1 or cols == 1:
-                        suspicious_tensors.append((name, tensor.shape, safetensors_file.name))
-                    elif rows > 100000 or cols > 100000:
-                        suspicious_tensors.append((name, tensor.shape, safetensors_file.name))
 
                 count += 1
 
