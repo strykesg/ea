@@ -5,6 +5,7 @@ Loads the model in full precision and saves it for llama.cpp conversion.
 """
 
 import os
+import json
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from pathlib import Path
@@ -45,6 +46,32 @@ def main():
         print("💾 Saving dequantized model...")
         model.save_pretrained(output_path)
         tokenizer.save_pretrained(output_path)
+
+        # Fix config to remove quantization settings
+        print("🔧 Cleaning config...")
+        config_path = Path(output_path) / "config.json"
+        if config_path.exists():
+            import json
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+
+            # Remove quantization-related settings
+            keys_to_remove = [
+                'quantization_config', 'load_in_4bit', 'load_in_8bit',
+                'bnb_4bit_compute_dtype', 'bnb_4bit_quant_type', 'bnb_4bit_use_double_quant'
+            ]
+            for key in keys_to_remove:
+                if key in config:
+                    del config[key]
+                    print(f"   Removed: {key}")
+
+            # Update model type and other settings for llama.cpp compatibility
+            config['torch_dtype'] = 'float16'
+            config['model_type'] = 'deepseek_v2'  # Ensure this matches
+
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=2)
+            print("   Updated config.json")
 
         print("✅ Dequantized model saved!")
         print(f"   Location: {output_path}")
