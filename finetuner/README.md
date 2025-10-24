@@ -232,10 +232,37 @@ pip install -e .
 3. **Longer Training**: Increase `max_steps` for better convergence
 4. **Experiment Tracking**: Set `WANDB_API_KEY` for detailed training logs
 
+### GPU-Specific Optimizations
+
+**H200/H100 (Data Center GPUs):**
+- **Batch Size**: 24+ (141GB VRAM allows very large batches)
+- **Data Workers**: 16 (maximum parallelization)
+- **Gradient Accumulation**: 1 (no accumulation needed)
+- **TF32**: Enabled (faster matrix operations)
+
+**RTX 5090/4090 (Consumer GPUs):**
+- **Batch Size**: 2-4 (24-32GB VRAM constraint)
+- **Data Workers**: 4-8 (CPU core optimization)
+- **Gradient Accumulation**: 2-4 (for effective larger batches)
+- **Memory Management**: Conservative settings
+
+### Monitor Training Performance
+
+```bash
+# Check GPU utilization
+nvidia-smi
+
+# Monitor training speed
+tail -f training.log | grep -E "(it/s|epoch|loss)"
+
+# Check memory usage
+nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu --format=csv
+```
+
 ### Memory Optimization
 - Use `load_in_4bit=True` (default) for memory efficiency
 - Reduce `max_seq_length` if running out of memory
-- Use gradient accumulation instead of larger batch sizes
+- Enable gradient accumulation for effective larger batches on smaller GPUs
 
 ## 🔄 Model Architecture
 
