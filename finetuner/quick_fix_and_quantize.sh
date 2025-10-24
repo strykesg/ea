@@ -21,8 +21,26 @@ echo "Step 1: Fixing missing configuration files..."
 python fix_missing_config.py
 
 echo ""
-echo "Step 2: Quantizing the model (using llama.cpp)..."
-python quantize_direct.py --model_path outputs/final_model_merged
+echo "Step 2: Dequantizing model..."
+python dequant_and_convert.py
+
+echo ""
+echo "Step 3: Converting to GGUF..."
+python llama.cpp/convert_hf_to_gguf.py \
+    outputs/temp_model \
+    --outtype f16 \
+    --outfile outputs/model_fp16.gguf
+
+echo ""
+echo "Step 4: Quantizing to Q4_K_M..."
+./llama.cpp/build/bin/quantize \
+    outputs/model_fp16.gguf \
+    outputs/model_q4_k_m.gguf \
+    Q4_K_M
+
+echo ""
+echo "Step 5: Cleanup..."
+rm -rf outputs/temp_model outputs/model_fp16.gguf
 
 echo ""
 echo "=================================="
