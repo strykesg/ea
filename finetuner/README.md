@@ -161,11 +161,22 @@ After successful completion, you'll find:
 
 ```
 outputs/
-├── final_model/              # Fine-tuned model (LoRA weights)
-├── final_model_merged/       # Merged model (full weights)
-├── model_q4_k_m.gguf         # Quantized GGUF model (ready for inference)
-└── checkpoints/              # Training checkpoints
+├── final_model/              # Fine-tuned model (LoRA weights only - can delete)
+├── final_model_merged/       # Merged model (full weights - keep for re-quantizing)
+├── model_q4_k_m.gguf         # Quantized GGUF model (MAIN FILE - ready for production)
+└── checkpoints/              # Training checkpoints (can delete after success)
 ```
+
+### 💾 Files to Keep
+
+| File/Folder | Size | Keep? | Purpose |
+|-------------|------|-------|---------|
+| `model_q4_k_m.gguf` | ~2-3GB | ✅ **YES** | Production-ready quantized model |
+| `final_model_merged/` | ~10-15GB | ⚠️ Optional | Full model for re-quantizing |
+| `final_model/` | ~200MB | ❌ No | LoRA adapters (already merged) |
+| `checkpoints/` | Varies | ❌ No | Training checkpoints |
+
+📖 **For detailed post-training instructions, see [POST_TRAINING_GUIDE.md](POST_TRAINING_GUIDE.md)**
 
 ## 🔧 Customization
 
@@ -285,6 +296,76 @@ The fine-tuner automatically configures **RoPE (Rotary Position Embedding) scali
 - **Logs all configuration steps** for debugging
 
 This enables efficient processing of long-form content while maintaining positional understanding.
+
+## 🧪 Testing the Fine-Tuned Model
+
+### Test the Hugging Face Model (Full Precision)
+
+```bash
+# Run test suite
+python test_model.py --model_path outputs/final_model_merged --test_suite
+
+# Test with custom prompt
+python test_model.py --model_path outputs/final_model_merged --prompt "Explain quantum computing"
+
+# Adjust generation parameters
+python test_model.py --model_path outputs/final_model_merged --prompt "Write a Python function" --temperature 0.8 --max_length 1024
+```
+
+### Test the GGUF Model (Quantized)
+
+**Method 1: Using the test script (automatic setup)**
+```bash
+# Simple test
+./test_gguf.sh
+
+# Custom prompt
+./test_gguf.sh outputs/model_q4_k_m.gguf "Your custom prompt here"
+```
+
+**Method 2: Manual llama.cpp**
+```bash
+# Clone and build llama.cpp
+git clone https://github.com/ggerganov/llama.cpp.git
+cd llama.cpp
+make LLAMA_CUDA=1 -j$(nproc)  # With CUDA
+# OR
+make -j$(nproc)  # CPU only
+
+# Run inference
+./main -m ../outputs/model_q4_k_m.gguf \
+    -p "Explain the concept of recursion" \
+    -n 512 \
+    --temp 0.7 \
+    --top-p 0.9 \
+    -ngl 99  # Offload layers to GPU
+```
+
+**Method 3: Using Python (llama-cpp-python)**
+```bash
+pip install llama-cpp-python
+
+python -c "
+from llama_cpp import Llama
+model = Llama(model_path='outputs/model_q4_k_m.gguf', n_gpu_layers=99)
+output = model('Explain quantum computing', max_tokens=512)
+print(output['choices'][0]['text'])
+"
+```
+
+### Comparison Test
+
+```bash
+# Test both models and compare outputs
+echo "Testing full model..."
+python test_model.py --model_path outputs/final_model_merged --prompt "Explain recursion" > full_output.txt
+
+echo "Testing GGUF model..."
+./test_gguf.sh outputs/model_q4_k_m.gguf "Explain recursion" > gguf_output.txt
+
+echo "Comparing outputs..."
+diff -y full_output.txt gguf_output.txt
+```
 
 ## 📝 License
 

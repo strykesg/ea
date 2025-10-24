@@ -179,8 +179,8 @@ class FinetuneConfig:
     lora_dropout: float = 0.1  # LoRA dropout
     lora_target_modules: list = None  # Will be set based on model
 
-    # Training configuration - optimized for H200
-    per_device_train_batch_size: int = 24  # H200 can handle much larger batches (141GB VRAM)
+    # Training configuration - optimized for H200 (141GB VRAM)
+    per_device_train_batch_size: int = 24  # H200 can handle large batches
     gradient_accumulation_steps: int = 1   # No accumulation needed for H200
     warmup_steps: int = 5
     max_steps: int = 621  # 3 epochs for 4962 samples with batch size 24
@@ -523,9 +523,54 @@ class DeepSeekFinetuner:
         merged_model.save_pretrained(merged_path)
         self.tokenizer.save_pretrained(merged_path)
 
+        # Copy custom configuration files for DeepSeek models
+        logger.info("Copying custom configuration files...")
+        self._copy_custom_config_files(merged_path)
+
         logger.info("Model saved successfully!")
 
         return output_path, merged_path
+
+    def _copy_custom_config_files(self, target_path: str):
+        """
+        Copy custom configuration files (like configuration_deepseek.py) to the target path.
+        This is needed for models with custom implementations.
+        """
+        try:
+            from huggingface_hub import snapshot_download
+            import shutil
+            
+            # Download base model configuration files
+            base_model_path = snapshot_download(
+                self.config.model_name,
+                allow_patterns=["*.py"],
+                ignore_patterns=["*.safetensors", "*.bin", "*.pth", "*.gguf"],
+            )
+            
+            # Files to copy
+            config_files = [
+                "configuration_deepseek.py",
+                "modeling_deepseek.py",
+                "tokenization_deepseek.py",
+                "tokenization_deepseek_fast.py",
+            ]
+            
+            target_path = Path(target_path)
+            base_path = Path(base_model_path)
+            
+            for filename in config_files:
+                src_file = base_path / filename
+                dst_file = target_path / filename
+                
+                if src_file.exists() and not dst_file.exists():
+                    shutil.copy2(src_file, dst_file)
+                    logger.info(f"  Copied {filename}")
+            
+            logger.info("Custom configuration files copied successfully")
+            
+        except Exception as e:
+            logger.warning(f"Could not copy custom config files: {e}")
+            logger.warning("You may need to run fix_missing_config.py before quantization")
 
 
 def main(config_dict: Optional[Dict[str, Any]] = None):
