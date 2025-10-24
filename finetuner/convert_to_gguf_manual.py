@@ -7,8 +7,8 @@ This script doesn't use the Python wrapper - uses llama.cpp binaries directly.
 import os
 import subprocess
 import logging
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -78,29 +78,93 @@ def main():
     # Install dependencies
     logger.info("📦 Installing dependencies...")
     try:
-        run_command(["pip", "install", "-q", "numpy", "sentencepiece", "protobuf"])
+        run_command(["pip", "install", "-q", "numpy", "sentencepiece", "protobuf", "torch", "transformers", "accelerate"])
     except:
         logger.warning("Could not install dependencies automatically")
 
-    # Convert to FP16
+    # Convert to FP16 - handle bitsandbytes issue
     fp16_output = "outputs/model_fp16.gguf"
     logger.info(f"🔄 Converting to FP16 GGUF: {fp16_output}")
 
-    cmd = [
-        "python",
-        str(convert_script),
-        model_path,
-        "--outtype", "f16",
-        "--outfile", fp16_output
-    ]
+    # First, try to dequantize the model if it uses bitsandbytes
+    logger.info("🔄 Checking if model needs dequantization...")
 
     try:
+        # Try direct conversion first
+        cmd = [
+            "python",
+            str(convert_script),
+            model_path,
+            "--outtype", "f16",
+            "--outfile", fp16_output
+        ]
+
+        logger.info("Attempting direct conversion...")
         run_command(cmd)
+        logger.info("✅ Direct conversion successful!")
+
     except Exception as e:
-        logger.error(f"❌ Conversion failed: {e}")
-        logger.error("   Try running manually:")
-        logger.error(f"   python {convert_script} {model_path} --outtype f16 --outfile {fp16_output}")
-        return 1
+        if "bitsandbytes" in str(e):
+            logger.info("🔄 Model uses bitsandbytes quantization, dequantizing first...")
+
+            # Create a dequantization script
+            dequant_script = f"""
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import os
+
+model_path = "{model_path}"
+output_path = "outputs/temp_model"
+
+print("Loading model...")
+model = AutoModelForCausalLM.from_pretrained(
+    model_path,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    load_in_4bit=False,  # Force full precision
+    trust_remote_code=True
+)
+
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+print("Saving dequantized model...")
+model.save_pretrained(output_path)
+tokenizer.save_pretrained(output_path)
+
+print(f"Dequantized model saved to: {{output_path}}")
+"""
+
+            # Write and run dequantization script
+            with open("temp_dequant.py", "w") as f:
+                f.write(dequant_script)
+
+            logger.info("Running dequantization...")
+            run_command(["python", "temp_dequant.py"])
+
+            # Now convert the dequantized model
+            logger.info("Converting dequantized model...")
+            cmd = [
+                "python",
+                str(convert_script),
+                "outputs/temp_model",
+                "--outtype", "f16",
+                "--outfile", fp16_output
+            ]
+
+            run_command(cmd)
+
+            # Clean up temp files
+            if os.path.exists("outputs/temp_model"):
+                shutil.rmtree("outputs/temp_model")
+            if os.path.exists("temp_dequant.py"):
+                os.remove("temp_dequant.py")
+
+            logger.info("✅ Dequantized conversion successful!")
+        else:
+            logger.error(f"❌ Conversion failed: {e}")
+            logger.error("   Try running manually:")
+            logger.error(f"   python {convert_script} {model_path} --outtype f16 --outfile {fp16_output}")
+            return 1
 
     # Check if FP16 was created
     if not Path(fp16_output).exists():
