@@ -41,14 +41,18 @@ logger = logging.getLogger(__name__)
 class FinetunePipeline:
     """Complete fine-tuning pipeline from data to quantized model."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, skip_finetune: bool = False, model_path: str = None):
         """
         Initialize the pipeline.
 
         Args:
             config: Optional configuration overrides
+            skip_finetune: Whether to skip fine-tuning and only quantize
+            model_path: Path to existing model (used when skip_finetune=True)
         """
         self.config = config or {}
+        self.skip_finetune = skip_finetune
+        self.model_path = model_path
         self.finetune_config = None
         self.output_paths = {}
 
@@ -203,7 +207,13 @@ class FinetunePipeline:
 
         try:
             # Use the merged model for quantization
-            model_path = self.output_paths.get('merged', 'outputs/final_model_merged')
+            # If skip_finetune is True and model_path is provided, use that
+            if self.skip_finetune and self.model_path:
+                model_path = self.model_path
+                logger.info(f"Using existing model: {model_path}")
+            else:
+                model_path = self.output_paths.get('merged', 'outputs/final_model_merged')
+            
             output_path = "outputs/model_q4_k_m.gguf"
 
             # Run quantization
@@ -224,28 +234,52 @@ class FinetunePipeline:
 
     def run_pipeline(self) -> bool:
         """Run the complete pipeline."""
-        logger.info("🎯 Starting complete fine-tuning pipeline...")
-        logger.info("=" * 60)
+        if self.skip_finetune:
+            logger.info("🔄 Quantization-only mode")
+            logger.info("=" * 60)
+            
+            # Verify model path exists
+            if not self.model_path or not Path(self.model_path).exists():
+                logger.error(f"❌ Model path not found: {self.model_path}")
+                logger.error("   Please provide a valid --model_path")
+                return False
+            
+            logger.info(f"Using existing model: {self.model_path}")
+            
+            # Only run quantization
+            if not self.run_quantization():
+                return False
+            
+            # Success!
+            logger.info("=" * 60)
+            logger.info("✅ Quantization complete!")
+            logger.info(f"   GGUF model: {self.output_paths.get('gguf')}")
+            logger.info("=" * 60)
+            return True
+        
+        else:
+            logger.info("🎯 Starting complete fine-tuning pipeline...")
+            logger.info("=" * 60)
 
-        # Step 1: Check requirements
-        if not self.check_requirements():
-            return False
+            # Step 1: Check requirements
+            if not self.check_requirements():
+                return False
 
-        # Step 2: Setup environment
-        if not self.setup_environment():
-            return False
+            # Step 2: Setup environment
+            if not self.setup_environment():
+                return False
 
-        # Step 3: Fine-tuning
-        if not self.run_finetuning():
-            return False
+            # Step 3: Fine-tuning
+            if not self.run_finetuning():
+                return False
 
-        # Step 4: Quantization
-        if not self.run_quantization():
-            return False
+            # Step 4: Quantization
+            if not self.run_quantization():
+                return False
 
-        # Success!
-        self.print_summary()
-        return True
+            # Success!
+            self.print_summary()
+            return True
 
     def print_summary(self):
         """Print a summary of the completed pipeline."""
@@ -318,10 +352,14 @@ Examples:
     }
 
     # Initialize and run pipeline
-    pipeline = FinetunePipeline(config)
+    pipeline = FinetunePipeline(
+        config=config,
+        skip_finetune=args.skip_finetune,
+        model_path=args.model_path
+    )
 
-    # Override data file if specified
-    if args.data_file != "data.jsonl":
+    # Override data file if specified (only if not skipping finetune)
+    if not args.skip_finetune and args.data_file != "data.jsonl":
         os.rename(args.data_file, "data.jsonl")
 
     try:
