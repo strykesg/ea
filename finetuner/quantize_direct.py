@@ -44,15 +44,33 @@ def install_llama_cpp():
     
     if llama_cpp_dir.exists():
         logger.info("✅ llama.cpp already exists")
-        return llama_cpp_dir
+        # Check if already built
+        if (llama_cpp_dir / "build" / "bin" / "quantize").exists() or \
+           (llama_cpp_dir / "build" / "quantize").exists():
+            logger.info("✅ llama.cpp already built")
+            return llama_cpp_dir
+        else:
+            logger.info("ℹ️  llama.cpp exists but not built, building now...")
+    else:
+        logger.info("📥 Cloning llama.cpp...")
+        run_command([
+            "git", "clone", 
+            "https://github.com/ggerganov/llama.cpp.git"
+        ])
     
-    logger.info("📥 Cloning llama.cpp...")
-    run_command([
-        "git", "clone", 
-        "https://github.com/ggerganov/llama.cpp.git"
-    ])
+    # Check for CMake
+    try:
+        result = run_command(["cmake", "--version"], check=False)
+        if result.returncode != 0:
+            raise RuntimeError("CMake not found")
+    except:
+        logger.error("❌ CMake is required but not found!")
+        logger.error("   Install CMake:")
+        logger.error("   Ubuntu/Debian: sudo apt-get install cmake")
+        logger.error("   Or: pip install cmake")
+        raise RuntimeError("CMake is required to build llama.cpp")
     
-    logger.info("🔧 Building llama.cpp...")
+    logger.info("🔧 Building llama.cpp with CMake...")
     
     # Check if CUDA is available
     try:
@@ -63,11 +81,24 @@ def install_llama_cpp():
         has_cuda = False
         logger.info("ℹ️  No CUDA detected, building CPU-only version")
     
-    # Build llama.cpp
-    if has_cuda:
-        run_command(["make", "LLAMA_CUDA=1", f"-j{os.cpu_count() or 4}"], cwd=llama_cpp_dir)
-    else:
-        run_command(["make", f"-j{os.cpu_count() or 4}"], cwd=llama_cpp_dir)
+    # Create build directory
+    build_dir = llama_cpp_dir / "build"
+    build_dir.mkdir(exist_ok=True)
+    
+    # Configure with CMake
+    cmake_args = [
+        "cmake", "..",
+        "-DLLAMA_CUDA=ON" if has_cuda else "-DLLAMA_CUDA=OFF",
+    ]
+    logger.info("📦 Configuring with CMake...")
+    run_command(cmake_args, cwd=build_dir)
+    
+    # Build
+    logger.info("🔨 Compiling (this may take a few minutes)...")
+    run_command(
+        ["cmake", "--build", ".", "--config", "Release", "-j", str(os.cpu_count() or 4)],
+        cwd=build_dir
+    )
     
     logger.info("✅ llama.cpp built successfully")
     return llama_cpp_dir
@@ -123,10 +154,20 @@ def quantize_gguf(fp16_path, quantization_type, llama_cpp_dir):
     
     logger.info(f"🔄 Quantizing to {quantization_type}...")
     
-    quantize_binary = llama_cpp_dir / "quantize"
+    # Look for quantize binary in build directory (CMake) or root (old Makefile)
+    quantize_binary = llama_cpp_dir / "build" / "bin" / "quantize"
+    if not quantize_binary.exists():
+        quantize_binary = llama_cpp_dir / "build" / "quantize"
+    if not quantize_binary.exists():
+        quantize_binary = llama_cpp_dir / "quantize"
     
     if not quantize_binary.exists():
-        raise FileNotFoundError(f"Quantize binary not found: {quantize_binary}")
+        raise FileNotFoundError(f"Quantize binary not found. Tried:\n"
+                              f"  - {llama_cpp_dir}/build/bin/quantize\n"
+                              f"  - {llama_cpp_dir}/build/quantize\n"
+                              f"  - {llama_cpp_dir}/quantize")
+    
+    logger.info(f"Using quantize binary: {quantize_binary}")
     
     cmd = [
         str(quantize_binary),
