@@ -111,15 +111,27 @@ def convert_to_fp16(model_path, llama_cpp_dir):
     
     logger.info(f"🔄 Converting {model_path} to FP16 GGUF...")
     
-    # Use llama.cpp's convert-hf-to-gguf.py script
+    # Use llama.cpp's convert script - check common locations
     convert_script = llama_cpp_dir / "convert-hf-to-gguf.py"
-    
     if not convert_script.exists():
-        # Try older naming convention
         convert_script = llama_cpp_dir / "convert.py"
-    
     if not convert_script.exists():
-        raise FileNotFoundError(f"Convert script not found in {llama_cpp_dir}")
+        # Check in build directory
+        convert_script = llama_cpp_dir / "build" / "bin" / "convert-hf-to-gguf"
+    if not convert_script.exists():
+        convert_script = llama_cpp_dir / "build" / "convert-hf-to-gguf"
+
+    if not convert_script.exists():
+        # List what files are actually there for debugging
+        logger.error(f"Available files in {llama_cpp_dir}:")
+        for f in llama_cpp_dir.glob("*"):
+            logger.error(f"  - {f}")
+        if (llama_cpp_dir / "build").exists():
+            logger.error(f"Available files in {llama_cpp_dir}/build:")
+            for f in (llama_cpp_dir / "build").glob("*"):
+                logger.error(f"  - {f}")
+        raise FileNotFoundError(f"Convert script not found in {llama_cpp_dir}. "
+                              "Please check the llama.cpp directory structure.")
     
     # Install required Python packages for conversion
     logger.info("📦 Installing conversion dependencies...")
@@ -129,6 +141,7 @@ def convert_to_fp16(model_path, llama_cpp_dir):
     ], check=False)
     
     # Run conversion
+    logger.info(f"Using convert script: {convert_script}")
     cmd = [
         sys.executable,
         str(convert_script),
@@ -136,7 +149,7 @@ def convert_to_fp16(model_path, llama_cpp_dir):
         "--outtype", "f16",
         "--outfile", str(fp16_output)
     ]
-    
+
     run_command(cmd)
     
     if not fp16_output.exists():
