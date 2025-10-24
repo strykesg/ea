@@ -106,9 +106,11 @@ The fine-tuner is pre-configured for optimal performance:
 - **Quantization**: Q4_K_M (balanced size/quality)
 
 ### Training Configuration
-- **Batch Size**: 2 per device (adjustable)
-- **Gradient Accumulation**: 4 steps
+- **Batch Size**: 24 per device (H200 optimized, adjustable for other GPUs)
+- **Gradient Accumulation**: 1 step (H200 optimized, no accumulation needed)
 - **Learning Rate**: 8e-5
+- **Data Workers**: 16 for H200/H100, 8 for consumer GPUs
+- **Performance**: Automatic GPU detection and optimization
 - **Training Steps**: 60 (adjustable for your dataset size)
 
 ## 🎛️ Usage
