@@ -119,6 +119,24 @@ def dequantize_bitsandbytes_model(model_path, output_path):
     print("✅ Dequantized model saved!")
     print(f"   Location: {output_path}")
 
+    # Now clean any remaining quantization artifacts
+    print("\n🧹 Cleaning quantization artifacts...")
+    try:
+        import subprocess
+        result = subprocess.run([
+            "python", "clean_quantization_artifacts.py",
+            output_path
+        ], capture_output=True, text=True, cwd=Path(__file__).parent)
+
+        if result.returncode == 0:
+            print("✅ Quantization artifacts cleaned successfully!")
+        else:
+            print("⚠️  Warning: Could not clean artifacts automatically")
+            print(f"   You may need to run: python clean_quantization_artifacts.py {output_path}")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not clean artifacts: {e}")
+        print(f"   You may need to run: python clean_quantization_artifacts.py {output_path}")
+
     # Clean up memory
     del model
     del tokenizer

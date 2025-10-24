@@ -25,6 +25,10 @@ echo "Step 2: Properly dequantizing model..."
 python proper_dequantize.py
 
 echo ""
+echo "Step 2.5: Manual cleanup of artifacts (if needed)..."
+./clean_temp_model.sh
+
+echo ""
 echo "Step 3: Converting to GGUF..."
 python llama.cpp/convert_hf_to_gguf.py \
     outputs/temp_clean_model \
