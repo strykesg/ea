@@ -37,6 +37,29 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _enable_perf_tweaks():
+    """Enable GPU performance features on supported hardware."""
+    try:
+        # Allow TF32 on matmul and cuDNN for faster GEMMs on Ampere/Blackwell
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+    except Exception:
+        pass
+    try:
+        # Prefer higher precision matmul that maps to TF32 fast paths
+        if hasattr(torch, "set_float32_matmul_precision"):
+            torch.set_float32_matmul_precision("high")
+    except Exception:
+        pass
+    try:
+        # Prefer Flash and mem-efficient SDPA kernels when available
+        from torch.backends.cuda import sdp_kernel
+
+        sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=True)
+    except Exception:
+        pass
+
+
 def _sanitize_rope_scaling(rope: Optional[dict]) -> dict:
     """Ensure rope_scaling dict has correct types/values.
 
@@ -137,7 +160,7 @@ class FinetuneConfig:
     max_steps: int = 60  # Small number for quick fine-tuning
     learning_rate: float = 8e-5
     logging_steps: int = 10
-    optim: str = "adamw_8bit"
+    optim: str = "adamw_torch_fused"
     weight_decay: float = 0.01
     lr_scheduler_type: str = "linear"
     seed: int = 3407
@@ -183,6 +206,9 @@ class DeepSeekFinetuner:
         logger.info(f"Loading model: {self.config.model_name}")
         logger.info(f"Max sequence length: {self.config.max_seq_length}")
         logger.info(f"Sample packing: {self.config.sample_packing}")
+
+        # Enable GPU performance features early
+        _enable_perf_tweaks()
 
         # RoPE scaling is handled automatically for DeepSeek models
 
@@ -287,7 +313,7 @@ class DeepSeekFinetuner:
             lora_alpha=self.config.lora_alpha,
             lora_dropout=self.config.lora_dropout,
             bias="none",
-            use_gradient_checkpointing="unsloth",
+            use_gradient_checkpointing=False,
             random_state=self.config.seed,
             use_rslora=False,
             loftq_config=None,
@@ -333,14 +359,15 @@ class DeepSeekFinetuner:
         logger.info("Setting up trainer...")
 
         # Training arguments
+        num_workers = min(max(4, (os.cpu_count() or 8) // 2), 16)
         training_args = TrainingArguments(
             per_device_train_batch_size=self.config.per_device_train_batch_size,
             gradient_accumulation_steps=self.config.gradient_accumulation_steps,
             warmup_steps=self.config.warmup_steps,
             max_steps=self.config.max_steps,
             learning_rate=self.config.learning_rate,
-            fp16=not self.config.load_in_4bit,  # Use fp16 if not using 4-bit
-            bf16=self.config.load_in_4bit,  # Use bf16 with 4-bit quantization
+            fp16=False,
+            bf16=True,
             logging_steps=self.config.logging_steps,
             optim=self.config.optim,
             weight_decay=self.config.weight_decay,
@@ -352,19 +379,23 @@ class DeepSeekFinetuner:
             save_total_limit=self.config.save_total_limit,
             load_best_model_at_end=False,
             dataloader_drop_last=True,
-            dataloader_num_workers=2,
+            dataloader_num_workers=num_workers,
+            dataloader_pin_memory=True,
+            torch_compile=True if os.getenv("ENABLE_TORCH_COMPILE") == "1" else False,
+            torch_compile_backend=os.getenv("TORCH_COMPILE_BACKEND", "inductor"),
             run_name="deepseek-coder-finetune",
             report_to="wandb" if os.getenv("WANDB_API_KEY") else "none",
         )
 
         # Create trainer with Unsloth optimizations
+        dataset_proc = min(8, max(2, (os.cpu_count() or 8) // 2))
         self.trainer = SFTTrainer(
             model=self.model,
             tokenizer=self.tokenizer,
             train_dataset=train_dataset,
             dataset_text_field="text",
             max_seq_length=self.config.max_seq_length,
-            dataset_num_proc=2,
+            dataset_num_proc=dataset_proc,
             packing=self.config.sample_packing,  # Enable sample packing for efficiency
             args=training_args,
         )
