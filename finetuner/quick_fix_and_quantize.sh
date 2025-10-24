@@ -21,8 +21,8 @@ echo "Step 1: Fixing missing configuration files..."
 python fix_missing_config.py
 
 echo ""
-echo "Step 2: Preparing model for conversion..."
-python direct_gguf_convert.py
+echo "Step 2: Properly dequantizing model..."
+python proper_dequantize.py
 
 echo ""
 echo "Step 3: Converting to GGUF..."
