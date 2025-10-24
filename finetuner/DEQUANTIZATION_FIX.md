@@ -51,6 +51,17 @@ The fix is integrated into the `quick_fix_and_quantize.sh` script, so just run:
 ./quick_fix_and_quantize.sh
 ```
 
+### Quick Fix for Known Corrupted Tensor
+If you encounter the specific `[11206656, 1]` tensor error, you can fix it directly:
+
+```bash
+# Remove the corrupted tensor
+python remove_corrupted_tensor.py outputs/final_model_merged
+
+# Then proceed with normal conversion
+python llama.cpp/convert_hf_to_gguf.py outputs/final_model_merged --outtype f16 --outfile outputs/model_fp16.gguf
+```
+
 ## Manual Usage
 If you need to run dequantization separately:
 

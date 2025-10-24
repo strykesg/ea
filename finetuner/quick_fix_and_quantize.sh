@@ -29,7 +29,15 @@ echo "Step 2.5: Inspecting model structure..."
 python inspect_model.py outputs/final_model_merged
 
 echo ""
-echo "Step 2.6: Manual cleanup of artifacts (if needed)..."
+echo "Step 2.6: Remove known corrupted tensor..."
+python remove_corrupted_tensor.py outputs/final_model_merged outputs/temp_clean_model
+
+echo ""
+echo "Step 2.7: Verify corrupted tensor removal..."
+python find_problematic_tensor.py outputs/temp_clean_model
+
+echo ""
+echo "Step 2.8: Manual cleanup of artifacts (if needed)..."
 ./clean_temp_model.sh
 
 echo ""

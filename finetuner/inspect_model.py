@@ -102,28 +102,34 @@ def inspect_model_structure(model_path):
 
     # Try to load with transformers to see what happens
     print("\n🔄 Testing model loading...")
-    try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        print("   Loading model with transformers...")
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.float16,
-            device_map="cpu",  # Use CPU to avoid GPU memory issues
-            trust_remote_code=True,
-            low_cpu_mem_usage=True
-        )
-        print("   ✅ Model loaded successfully!")
-        print(f"   Model type: {type(model)}")
-        print(f"   Parameters: {sum(p.numel() for p in model.parameters()):,}")
+    # Skip loading test if we found corrupted tensors
+    if suspicious_tensors:
+        print("   ⏭️  Skipping model loading test due to suspicious tensors found")
+        print("   ℹ️  Run remove_corrupted_tensor.py first to fix the model")
+    else:
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        # Clean up
-        del model
+            print("   Loading model with transformers...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype=torch.float16,
+                device_map="cpu",  # Use CPU to avoid GPU memory issues
+                trust_remote_code=True,
+                low_cpu_mem_usage=True
+            )
+            print("   ✅ Model loaded successfully!")
+            print(f"   Model type: {type(model)}")
+            print(f"   Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    except Exception as e:
-        print(f"   ❌ Model loading failed: {e}")
-        import traceback
-        traceback.print_exc()
+            # Clean up
+            del model
+
+        except Exception as e:
+            print(f"   ❌ Model loading failed: {e}")
+            print("   💡 Try running: python remove_corrupted_tensor.py outputs/final_model_merged")
+            # Don't show full traceback unless requested
 
     return True
 
