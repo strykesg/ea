@@ -12,6 +12,8 @@ A one-click script to fine-tune DeepSeek-V2-Lite on your custom dataset and quan
    ```
 3. **Get your quantized model** in `outputs/model_q4_k_m.gguf`
 
+> ⚠️ **Troubleshooting:** If you see `configuration_deepseek.py not found` error, see [RECOVERY_GUIDE.md](RECOVERY_GUIDE.md)
+
 ## 📋 Requirements
 
 ### Hardware Requirements
