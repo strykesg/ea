@@ -21,11 +21,15 @@ echo "Step 1: Fixing missing configuration files..."
 python fix_missing_config.py
 
 echo ""
-echo "Step 2: Properly dequantizing model..."
-python proper_dequantize.py
+echo "Step 2: Robustly dequantizing model..."
+python robust_dequantize.py
 
 echo ""
-echo "Step 2.5: Manual cleanup of artifacts (if needed)..."
+echo "Step 2.5: Inspecting model structure..."
+python inspect_model.py outputs/final_model_merged
+
+echo ""
+echo "Step 2.6: Manual cleanup of artifacts (if needed)..."
 ./clean_temp_model.sh
 
 echo ""
