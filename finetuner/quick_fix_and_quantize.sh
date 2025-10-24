@@ -21,8 +21,8 @@ echo "Step 1: Fixing missing configuration files..."
 python fix_missing_config.py
 
 echo ""
-echo "Step 2: Quantizing the model..."
-python src/run_finetune.py --skip_finetune --model_path outputs/final_model_merged
+echo "Step 2: Quantizing the model (using llama.cpp)..."
+python quantize_direct.py --model_path outputs/final_model_merged
 
 echo ""
 echo "=================================="
@@ -30,6 +30,9 @@ echo "✅ All done!"
 echo ""
 echo "Your quantized model is ready:"
 echo "   outputs/model_q4_k_m.gguf"
+echo ""
+echo "Verify it exists:"
+ls -lh outputs/model_q4_k_m.gguf
 echo ""
 echo "Test it with:"
 echo "   ./test_gguf.sh"
