@@ -160,7 +160,7 @@ class FinetuneConfig:
     max_steps: int = 60  # Small number for quick fine-tuning
     learning_rate: float = 8e-5
     logging_steps: int = 10
-    optim: str = "adamw_torch_fused"
+    optim: str = "adamw_8bit"
     weight_decay: float = 0.01
     lr_scheduler_type: str = "linear"
     seed: int = 3407
@@ -313,7 +313,7 @@ class DeepSeekFinetuner:
             lora_alpha=self.config.lora_alpha,
             lora_dropout=self.config.lora_dropout,
             bias="none",
-            use_gradient_checkpointing=False,
+            use_gradient_checkpointing="unsloth",
             random_state=self.config.seed,
             use_rslora=False,
             loftq_config=None,
