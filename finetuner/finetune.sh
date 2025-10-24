@@ -23,8 +23,8 @@ if [ ! -f "src/run_finetune.py" ]; then
 fi
 
 # Set default options
-BATCH_SIZE=2
-MAX_STEPS=60
+BATCH_SIZE=24  # H200 optimized
+MAX_STEPS=621  # 3 epochs
 SEQ_LENGTH=16384
 
 # Parse arguments
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [options]"
             echo ""
             echo "Options:"
-            echo "  --batch_size SIZE    Training batch size (default: 2)"
+            echo "  --batch_size SIZE    Training batch size (default: 24 for H200, 2 for consumer GPUs)"
             echo "  --max_steps STEPS    Maximum training steps (default: 621 for 3 epochs)"
             echo "  --seq_length LENGTH  Maximum sequence length (default: 16384)"
             echo "  --help              Show this help message"

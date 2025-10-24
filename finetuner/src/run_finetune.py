@@ -176,8 +176,8 @@ class FinetunePipeline:
                 'max_seq_length': 16384,  # High sequence length for long-form reasoning
                 'sample_packing': True,   # Enable sample packing
                 'max_steps': 621,         # 3 epochs for 4962 samples with batch size 24
-                'per_device_train_batch_size': 2,
-                'gradient_accumulation_steps': 4,
+                'per_device_train_batch_size': 24,  # H200 optimized
+                'gradient_accumulation_steps': 1,   # No accumulation needed
             }
             config_dict.update(self.config)
 
@@ -292,8 +292,8 @@ Examples:
         """
     )
 
-    parser.add_argument("--batch_size", type=int, default=2,
-                       help="Training batch size (default: 2)")
+    parser.add_argument("--batch_size", type=int, default=24,
+                       help="Training batch size (default: 24 for H200, 2 for consumer GPUs)")
     parser.add_argument("--max_steps", type=int, default=621,
                        help="Maximum training steps (default: 621 for 3 epochs)")
     parser.add_argument("--seq_length", type=int, default=16384,

@@ -235,15 +235,17 @@ pip install -e .
 ### GPU-Specific Optimizations
 
 **H200/H100 (Data Center GPUs):**
-- **Batch Size**: 24+ (141GB VRAM allows very large batches)
+- **Batch Size**: 24 (141GB VRAM allows very large batches)
 - **Data Workers**: 16 (maximum parallelization)
 - **Gradient Accumulation**: 1 (no accumulation needed)
+- **Training Steps**: 621 (3 epochs for 4962 samples)
 - **TF32**: Enabled (faster matrix operations)
 
 **RTX 5090/4090 (Consumer GPUs):**
 - **Batch Size**: 2-4 (24-32GB VRAM constraint)
 - **Data Workers**: 4-8 (CPU core optimization)
 - **Gradient Accumulation**: 2-4 (for effective larger batches)
+- **Training Steps**: 621 (3 epochs)
 - **Memory Management**: Conservative settings
 
 ### Monitor Training Performance
