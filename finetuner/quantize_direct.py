@@ -135,10 +135,14 @@ def convert_to_fp16(model_path, llama_cpp_dir):
     
     # Install required Python packages for conversion
     logger.info("📦 Installing conversion dependencies...")
-    run_command([
-        sys.executable, "-m", "pip", "install", "-q",
-        "numpy", "sentencepiece", "protobuf"
-    ], check=False)
+    try:
+        run_command([
+            sys.executable, "-m", "pip", "install", "-q",
+            "numpy", "sentencepiece", "protobuf"
+        ], check=False)
+    except Exception as e:
+        logger.warning(f"Could not install dependencies: {e}")
+        logger.warning("You may need to install them manually: pip install numpy sentencepiece protobuf")
     
     # Run conversion
     logger.info(f"Using convert script: {convert_script}")
